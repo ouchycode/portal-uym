@@ -1,53 +1,252 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
-import { Platform } from 'react-native';
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+import { StyleSheet } from "react-native";
 
 export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
-};
+  bg: "#F0F4FA",
+  card: "#FFFFFF",
+  primary: "#1A4C8B",
+  primaryLight: "#EFF6FF",
+  primaryMid: "#DBEAFE",
+  text: "#111827",
+  muted: "#6B7280",
+  hint: "#9CA3AF",
+  border: "#E5E7EB",
+  error: "#DC2626",
+  errorBg: "#FEF2F2",
+  successBg: "#F0FDF4",
+  successText: "#15803D",
+  successBorder: "#86EFAC",
+  warningBg: "#FFFBEB",
+  warningText: "#B45309",
+  warningBorder: "#FCD34D",
+  dangerBg: "#FEF2F2",
+  dangerText: "#DC2626",
+  dangerBorder: "#FECACA",
+  skeletonBase: "#E5E7EB",
+} as const;
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+export const globalStyles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.bg,
   },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
   },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  pageTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 16,
+  },
+  card: {
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+    marginBottom: 12,
+    gap: 12,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.text,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  iconWrap: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 8,
+    padding: 7,
+  },
+  infoLabel: {
+    fontSize: 11,
+    color: Colors.muted,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.text,
+  },
+  inputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Colors.bg,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 14,
+    height: 46,
+  },
+  inputField: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.text,
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: Colors.muted,
+    letterSpacing: 0.4,
+    marginBottom: 6,
+  },
+  btnPrimary: {
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  btnPrimaryText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  btnDanger: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.dangerBg,
+    borderWidth: 1,
+    borderColor: Colors.dangerBorder,
+    borderRadius: 10,
+    paddingVertical: 13,
+    marginTop: 4,
+  },
+  btnDangerText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Colors.dangerText,
+  },
+  badgePrimary: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+  },
+  badgePrimaryText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.primary,
+  },
+  badgeSuccess: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.successBg,
+    borderWidth: 1,
+    borderColor: Colors.successBorder,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeSuccessText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: Colors.successText,
+  },
+  infoBox: {
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 10,
+    padding: 12,
+    alignItems: "flex-start",
+    marginTop: 16,
+  },
+  infoBoxText: {
+    flex: 1,
+    fontSize: 11,
+    color: Colors.primary,
+    lineHeight: 17,
+  },
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+    backgroundColor: Colors.errorBg,
+    borderRadius: 8,
+    padding: 10,
+  },
+  errorText: {
+    fontSize: 13,
+    color: Colors.error,
+    flex: 1,
+  },
+  footer: {
+    textAlign: "center",
+    color: Colors.hint,
+    fontSize: 11,
+    marginTop: 20,
+  },
+  dot: {
+    fontSize: 14,
+    color: Colors.muted,
+  },
+
+  summaryCard: {
+    flex: 1,
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 12,
+    alignItems: "center",
+    gap: 4,
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.text,
+  },
+  summaryLabel: {
+    fontSize: 10,
+    color: Colors.muted,
+    textAlign: "center",
+  },
+
+  // Filter chip
+  filterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+  },
+  filterChipActive: {
+    backgroundColor: Colors.primaryLight,
+    borderColor: Colors.primary,
+  },
+  filterChipText: {
+    fontSize: 12,
+    color: Colors.muted,
+    fontWeight: "500",
+  },
+  filterChipTextActive: {
+    color: Colors.primary,
+    fontWeight: "600",
   },
 });
