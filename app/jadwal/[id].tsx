@@ -1,9 +1,10 @@
+import { SkeletonBlock } from "@/components/SkeletonBlock";
+import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Linking,
   ScrollView,
   StyleSheet,
@@ -13,24 +14,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const C = {
-  bg: "#F4F6F9",
-  card: "#FFFFFF",
-  primary: "#1A4C8B",
-  primaryLight: "#EEF3FA",
-  text: "#1A1A2E",
-  muted: "#6B7280",
-  border: "#D1D5DB",
-  successBg: "#F0FDF4",
-  successText: "#15803D",
-  successBorder: "#86EFAC",
-  danger: "#EF4444",
-  dangerLight: "#FEF2F2",
-  warningBg: "#FFFBEB",
-  warningText: "#92400E",
-  warningBorder: "#FCD34D",
-};
-
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
 const JENIS_ICON: Record<string, any> = {
   materi: "document-text-outline",
   teks: "reader-outline",
@@ -49,22 +35,166 @@ const JENIS_LABEL: Record<string, string> = {
 
 const TABS = ["materi", "teks", "forum", "tugas", "vidcon"];
 
-// ─── Materi Item ──────────────────────────────────────────────────────────────
+const STATUS_MAP: Record<
+  string,
+  { bg: string; border: string; text: string; label: string }
+> = {
+  selesai: {
+    bg: Colors.successBg,
+    border: Colors.successBorder,
+    text: Colors.successText,
+    label: "Selesai",
+  },
+  berlangsung: {
+    bg: Colors.primaryLight,
+    border: Colors.primary + "60",
+    text: Colors.primary,
+    label: "Berlangsung",
+  },
+  belum: {
+    bg: Colors.warningBg,
+    border: Colors.warningBorder,
+    text: Colors.warningText,
+    label: "Belum Mulai",
+  },
+};
+
+const EXT_COLOR: Record<string, string> = {
+  ".pdf": "#EF4444",
+  ".pptx": "#F97316",
+  ".ppt": "#F97316",
+  ".docx": "#3B82F6",
+  ".doc": "#3B82F6",
+  ".xlsx": "#10B981",
+  ".mp4": "#8B5CF6",
+  ".zip": "#6B7280",
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+function fmtTime(iso?: string) {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function fmtDate(iso?: string) {
+  if (!iso || iso.startsWith("0001")) return null;
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function stripHtml(s?: string) {
+  return s?.replace(/<[^>]+>/g, " ").trim() || "";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Skeleton components
+// ─────────────────────────────────────────────────────────────────────────────
+function SummarySkeleton() {
+  return (
+    <View style={s.summaryStrip}>
+      {[1, 2, 3].map((i) => (
+        <View key={i} style={[g.summaryCard, { flex: 1, gap: 6 }]}>
+          <SkeletonBlock height={22} width="50%" />
+          <SkeletonBlock height={11} width="70%" />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function DetailSkeleton() {
+  return (
+    <View style={{ paddingHorizontal: 14, paddingTop: 20, gap: 14 }}>
+      {/* info card skeleton */}
+      <View style={[s.infoCard, { gap: 12 }]}>
+        {[70, 55, 45, 60].map((w, i) => (
+          <View
+            key={i}
+            style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+          >
+            <SkeletonBlock height={14} width={14} />
+            <SkeletonBlock height={12} width={60} />
+            <SkeletonBlock height={12} width={`${w}%` as any} />
+          </View>
+        ))}
+        <View style={{ marginTop: 4 }}>
+          <SkeletonBlock height={40} width="100%" />
+        </View>
+      </View>
+      {/* tabs skeleton */}
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        {[60, 50, 55, 50, 60].map((w, i) => (
+          <SkeletonBlock key={i} height={32} width={w} />
+        ))}
+      </View>
+      {/* content skeletons */}
+      {[1, 2, 3].map((i) => (
+        <View key={i} style={s.skeletonCard}>
+          <View style={s.skeletonExt} />
+          <View style={{ flex: 1, gap: 7 }}>
+            <SkeletonBlock height={13} width="65%" />
+            <SkeletonBlock height={11} width="40%" />
+            <SkeletonBlock height={10} width="30%" />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function TabContentSkeleton({ tab }: { tab: string }) {
+  if (tab === "materi") {
+    return (
+      <View style={{ gap: 8 }}>
+        {[1, 2].map((i) => (
+          <View key={i} style={s.skeletonCard}>
+            <View style={s.skeletonExt} />
+            <View style={{ flex: 1, gap: 7 }}>
+              <SkeletonBlock height={13} width="65%" />
+              <SkeletonBlock height={11} width="40%" />
+              <SkeletonBlock height={10} width="30%" />
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  }
+  return (
+    <View style={{ gap: 8 }}>
+      {[1, 2].map((i) => (
+        <View
+          key={i}
+          style={[
+            s.skeletonCard,
+            { flexDirection: "column", alignItems: "flex-start" },
+          ]}
+        >
+          <SkeletonBlock height={13} width="70%" />
+          <SkeletonBlock height={11} width="50%" />
+          <SkeletonBlock height={11} width="40%" />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Content item components
+// ─────────────────────────────────────────────────────────────────────────────
 function MateriItem({ item }: { item: any }) {
   const ext = item.file?.extension || "";
   const url = item.file?.url;
-
-  const extColor: Record<string, string> = {
-    ".pdf": "#EF4444",
-    ".pptx": "#F97316",
-    ".ppt": "#F97316",
-    ".docx": "#3B82F6",
-    ".doc": "#3B82F6",
-    ".xlsx": "#10B981",
-    ".mp4": "#8B5CF6",
-    ".zip": "#6B7280",
-  };
-  const color = extColor[ext] || C.primary;
+  const color = EXT_COLOR[ext] || Colors.primary;
 
   const handleOpen = async () => {
     if (!url) return;
@@ -76,13 +206,11 @@ function MateriItem({ item }: { item: any }) {
       return;
     }
     const supported = await Linking.canOpenURL(url);
-    if (supported) {
-      await Linking.openURL(url);
-    } else {
-      await Linking.openURL(
-        `https://docs.google.com/viewer?url=${encodeURIComponent(url)}`,
-      );
-    }
+    await Linking.openURL(
+      supported
+        ? url
+        : `https://docs.google.com/viewer?url=${encodeURIComponent(url)}`,
+    );
   };
 
   return (
@@ -108,7 +236,7 @@ function MateriItem({ item }: { item: any }) {
         </Text>
         {item.deskripsi ? (
           <Text style={s.materiDesc} numberOfLines={2}>
-            {item.deskripsi.replace(/<[^>]+>/g, " ").trim()}
+            {stripHtml(item.deskripsi)}
           </Text>
         ) : null}
         <Text style={s.materiMeta}>
@@ -118,14 +246,195 @@ function MateriItem({ item }: { item: any }) {
       <Ionicons
         name={url ? "download-outline" : "lock-closed-outline"}
         size={18}
-        color={url ? C.primary : C.muted}
+        color={url ? Colors.primary : Colors.hint}
       />
     </TouchableOpacity>
   );
 }
 
-// ─── Generic Content Item ─────────────────────────────────────────────────────
+function TugasItem({ item }: { item: any }) {
+  const deadline = fmtDate(item.deadline);
+  const sudah = item.jumlah_pengumpulan > 0;
+  const isLate = deadline && new Date(item.deadline) < new Date() && !sudah;
+
+  return (
+    <TouchableOpacity
+      style={[s.tugasCard, isLate && { borderColor: Colors.dangerBorder }]}
+      activeOpacity={0.75}
+      onPress={() =>
+        router.push({
+          pathname: "/tugas/[id]",
+          params: {
+            id: String(item.id),
+            pertemuan: item.id_pertemuan,
+            judul: item.judul,
+          },
+        })
+      }
+    >
+      <View
+        style={[
+          s.cardStripe,
+          {
+            backgroundColor: isLate
+              ? Colors.dangerText
+              : sudah
+                ? Colors.successText
+                : Colors.primary,
+          },
+        ]}
+      />
+      <View style={{ flex: 1, padding: 12, gap: 6 }}>
+        <View
+          style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}
+        >
+          <View style={s.tugasIconWrap}>
+            <Ionicons name="clipboard-outline" size={16} color="#F97316" />
+          </View>
+          <Text style={s.tugasTitle} numberOfLines={2}>
+            {item.judul || item.nama || "—"}
+          </Text>
+        </View>
+        {item.deskripsi ? (
+          <Text style={s.genericDesc} numberOfLines={2}>
+            {stripHtml(item.deskripsi)}
+          </Text>
+        ) : null}
+        {deadline ? (
+          <View style={s.deadlineRow}>
+            <Ionicons
+              name="alarm-outline"
+              size={12}
+              color={isLate ? Colors.dangerText : Colors.hint}
+            />
+            <Text
+              style={[s.deadlineText, isLate && { color: Colors.dangerText }]}
+            >
+              Deadline: {deadline}
+            </Text>
+            {isLate && (
+              <View style={s.lateBadge}>
+                <Text style={s.lateBadgeText}>Terlambat</Text>
+              </View>
+            )}
+          </View>
+        ) : null}
+        <View
+          style={[
+            s.tugasStatusBadge,
+            sudah ? s.badgeSuccessSmall : s.badgeWarningSmall,
+          ]}
+        >
+          <Ionicons
+            name={sudah ? "checkmark-circle" : "time-outline"}
+            size={11}
+            color={sudah ? Colors.successText : Colors.warningText}
+          />
+          <Text
+            style={[
+              s.tugasStatusText,
+              { color: sudah ? Colors.successText : Colors.warningText },
+            ]}
+          >
+            {sudah ? "Sudah dikumpulkan" : "Belum dikumpulkan"}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function ForumItem({ item }: { item: any }) {
+  return (
+    <View style={s.forumCard}>
+      <View style={s.forumHeader}>
+        <View style={s.forumIconWrap}>
+          <Ionicons name="chatbubbles-outline" size={15} color="#0EA5E9" />
+        </View>
+        <Text style={s.forumTitle} numberOfLines={2}>
+          {item.topik || item.judul || "—"}
+        </Text>
+      </View>
+      {item.deskripsi ? (
+        <Text style={s.genericDesc} numberOfLines={3}>
+          {stripHtml(item.deskripsi)}
+        </Text>
+      ) : null}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        {item.jumlah_balasan != null && (
+          <View style={s.forumMeta}>
+            <Ionicons name="chatbubble-outline" size={11} color={Colors.hint} />
+            <Text style={s.forumMetaText}>{item.jumlah_balasan} balasan</Text>
+          </View>
+        )}
+        {item.url ? (
+          <TouchableOpacity
+            style={s.linkBtn}
+            onPress={() => Linking.openURL(item.url)}
+          >
+            <Ionicons name="open-outline" size={13} color={Colors.primary} />
+            <Text style={s.linkText}>Buka Forum</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+function TeksItem({ item }: { item: any }) {
+  return (
+    <View style={s.teksCard}>
+      <Text style={s.teksTitle}>{item.judul || "—"}</Text>
+      {item.deskripsi ? (
+        <Text style={s.teksBody} numberOfLines={6}>
+          {stripHtml(item.deskripsi)}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function VidconItem({ item }: { item: any }) {
+  const start = fmtDate(item.waktu_mulai);
+  return (
+    <View style={s.vidconCard}>
+      <View style={s.vidconHeader}>
+        <View style={s.vidconIconWrap}>
+          <Ionicons name="videocam-outline" size={16} color="#8B5CF6" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.vidconTitle} numberOfLines={2}>
+            {item.judul || item.nama || "—"}
+          </Text>
+          {start ? <Text style={s.vidconMeta}>{start}</Text> : null}
+        </View>
+      </View>
+      {item.deskripsi ? (
+        <Text style={s.genericDesc} numberOfLines={2}>
+          {stripHtml(item.deskripsi)}
+        </Text>
+      ) : null}
+      {item.url ? (
+        <TouchableOpacity
+          style={[s.linkBtn, { backgroundColor: "#F5F3FF" }]}
+          onPress={() => Linking.openURL(item.url)}
+        >
+          <Ionicons name="videocam-outline" size={13} color="#8B5CF6" />
+          <Text style={[s.linkText, { color: "#8B5CF6" }]}>Bergabung</Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+}
+
 function GenericItem({ item }: { item: any }) {
+  const deadline = fmtDate(item.deadline);
   return (
     <View style={s.genericCard}>
       <Text style={s.genericTitle}>
@@ -133,19 +442,14 @@ function GenericItem({ item }: { item: any }) {
       </Text>
       {item.deskripsi ? (
         <Text style={s.genericDesc} numberOfLines={3}>
-          {item.deskripsi.replace(/<[^>]+>/g, " ").trim()}
+          {stripHtml(item.deskripsi)}
         </Text>
       ) : null}
-      {item.deadline && item.deadline !== "0001-01-01T00:00:00Z" ? (
+      {deadline ? (
         <View style={s.deadlineRow}>
-          <Ionicons name="alarm-outline" size={12} color={C.danger} />
-          <Text style={s.deadlineText}>
-            Deadline:{" "}
-            {new Date(item.deadline).toLocaleDateString("id-ID", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
+          <Ionicons name="alarm-outline" size={12} color={Colors.dangerText} />
+          <Text style={[s.deadlineText, { color: Colors.dangerText }]}>
+            Deadline: {deadline}
           </Text>
         </View>
       ) : null}
@@ -154,7 +458,7 @@ function GenericItem({ item }: { item: any }) {
           style={s.linkBtn}
           onPress={() => Linking.openURL(item.url)}
         >
-          <Ionicons name="open-outline" size={13} color={C.primary} />
+          <Ionicons name="open-outline" size={13} color={Colors.primary} />
           <Text style={s.linkText}>Buka Link</Text>
         </TouchableOpacity>
       ) : null}
@@ -162,7 +466,9 @@ function GenericItem({ item }: { item: any }) {
   );
 }
 
-// ─── PertemuanDetail ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Main screen
+// ─────────────────────────────────────────────────────────────────────────────
 export default function PertemuanDetail() {
   const params = useLocalSearchParams<{
     id: string;
@@ -172,6 +478,8 @@ export default function PertemuanDetail() {
   }>();
 
   const [loading, setLoading] = useState(true);
+  const [tabLoading, setTabLoading] = useState(false);
+  const [error, setError] = useState(false);
   const [detail, setDetail] = useState<any>(null);
   const [kehadiran, setKehadiran] = useState<any>(null);
   const [contents, setContents] = useState<Record<string, any[]>>({});
@@ -183,6 +491,7 @@ export default function PertemuanDetail() {
 
   const fetchAll = async () => {
     setLoading(true);
+    setError(false);
     try {
       const detailRes = await API.get(`/v2/lms/pertemuan/${params.id}`);
       setDetail(detailRes.data?.data);
@@ -204,94 +513,224 @@ export default function PertemuanDetail() {
 
       const newContents: Record<string, any[]> = {};
       results.forEach((r, i) => {
-        const t = TABS[i];
-        newContents[t] =
+        newContents[TABS[i]] =
           r.status === "fulfilled" ? r.value.data?.data || [] : [];
       });
       setContents(newContents);
 
       const first = TABS.find((t) => (newContents[t]?.length || 0) > 0);
       if (first) setActiveTab(first);
-    } catch (e) {
-      console.log(e);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const renderContent = () => {
-    const items = contents[activeTab] || [];
-    if (loading) {
-      return (
-        <View style={s.centered}>
-          <ActivityIndicator color={C.primary} />
-        </View>
-      );
+  const handleTabPress = (tab: string) => {
+    if (tab === activeTab) return;
+    setTabLoading(true);
+    setActiveTab(tab);
+    setTimeout(() => setTabLoading(false), 300);
+  };
+
+  const totalActivity = TABS.reduce(
+    (sum, t) => sum + (contents[t]?.length || 0),
+    0,
+  );
+
+  const renderItem = (item: any, i: number) => {
+    switch (activeTab) {
+      case "materi":
+        return <MateriItem key={i} item={item} />;
+      case "tugas":
+        return <TugasItem key={i} item={item} />;
+      case "forum":
+        return <ForumItem key={i} item={item} />;
+      case "teks":
+        return <TeksItem key={i} item={item} />;
+      case "vidcon":
+        return <VidconItem key={i} item={item} />;
+      default:
+        return <GenericItem key={i} item={item} />;
     }
+  };
+
+  const renderContent = () => {
+    if (tabLoading) return <TabContentSkeleton tab={activeTab} />;
+    const items = contents[activeTab] || [];
     if (items.length === 0) {
       return (
         <View style={s.emptyTab}>
-          <Ionicons name={JENIS_ICON[activeTab]} size={28} color={C.border} />
-          <Text style={s.emptyTabText}>Tidak ada {JENIS_LABEL[activeTab]}</Text>
+          <Ionicons
+            name={JENIS_ICON[activeTab]}
+            size={40}
+            color={Colors.border}
+          />
+          <Text style={s.emptyTabTitle}>
+            Tidak ada {JENIS_LABEL[activeTab]}
+          </Text>
+          <Text style={s.emptyTabSub}>
+            Konten belum tersedia untuk pertemuan ini
+          </Text>
         </View>
       );
     }
-    return (
-      <View style={{ gap: 8 }}>
-        {items.map((item, i) =>
-          activeTab === "materi" ? (
-            <MateriItem key={i} item={item} />
-          ) : (
-            <GenericItem key={i} item={item} />
-          ),
-        )}
-      </View>
-    );
+    return <View style={{ gap: 8 }}>{items.map(renderItem)}</View>;
   };
 
+  const statusCfg = STATUS_MAP[detail?.status || ""] || STATUS_MAP.belum;
+  const isLive = detail?.status === "berlangsung";
+
   return (
-    <SafeAreaView style={s.root}>
-      {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity
-          style={s.backBtn}
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={20} color={C.primary} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
+    <SafeAreaView style={g.safeArea}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* ── HEADER ── */}
+        <View style={s.header}>
+          <View style={s.decor1} />
+          <View style={s.decor2} />
+          <View style={s.decor3} />
+          <View style={s.decor4} />
+
+          <View style={s.headerTop}>
+            <TouchableOpacity
+              style={s.backBtn}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Text style={s.backLabel}>Kembali</Text>
+            </TouchableOpacity>
+
+            {!loading && !error && detail && (
+              <View
+                style={[
+                  s.headerBadge,
+                  {
+                    backgroundColor: statusCfg.bg,
+                    borderColor: statusCfg.border,
+                  },
+                ]}
+              >
+                {isLive && <View style={s.liveDot} />}
+                <Text style={[s.headerBadgeText, { color: statusCfg.text }]}>
+                  {statusCfg.label}
+                </Text>
+              </View>
+            )}
+          </View>
+
           <Text style={s.headerTitle}>
             {detail ? `Pertemuan ${detail.nomor}` : "Detail Pertemuan"}
           </Text>
           <Text style={s.headerSub} numberOfLines={1}>
             {params.nama_mk}
+            {params.nama_kelas ? ` · ${params.nama_kelas}` : ""}
           </Text>
         </View>
-      </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {loading && !detail ? (
-          <View style={[s.centered, { paddingVertical: 80 }]}>
-            <ActivityIndicator color={C.primary} size="large" />
-            <Text style={s.loadingText}>Memuat data pertemuan...</Text>
+        {/* ── SUMMARY STRIP ── */}
+        {loading ? (
+          <SummarySkeleton />
+        ) : !error && detail ? (
+          <View style={s.summaryStrip}>
+            <View style={g.summaryCard}>
+              <Text style={g.summaryValue}>{detail.nomor}</Text>
+              <Text style={g.summaryLabel}>Pertemuan ke</Text>
+            </View>
+            <View style={g.summaryCard}>
+              <Text style={[g.summaryValue, { color: Colors.primary }]}>
+                {totalActivity}
+              </Text>
+              <Text style={g.summaryLabel}>Aktivitas</Text>
+            </View>
+            {kehadiran ? (
+              <View
+                style={[
+                  g.summaryCard,
+                  {
+                    borderColor: kehadiran.is_hadir
+                      ? Colors.successBorder
+                      : Colors.dangerBorder,
+                    backgroundColor: kehadiran.is_hadir
+                      ? Colors.successBg
+                      : Colors.dangerBg,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={
+                    kehadiran.is_hadir ? "checkmark-circle" : "close-circle"
+                  }
+                  size={18}
+                  color={
+                    kehadiran.is_hadir ? Colors.successText : Colors.dangerText
+                  }
+                />
+                <Text
+                  style={[
+                    g.summaryLabel,
+                    {
+                      color: kehadiran.is_hadir
+                        ? Colors.successText
+                        : Colors.dangerText,
+                      fontWeight: "600",
+                    },
+                  ]}
+                >
+                  {kehadiran.presensi === "H"
+                    ? "Hadir"
+                    : kehadiran.presensi === "I"
+                      ? "Izin"
+                      : "Tidak Hadir"}
+                </Text>
+              </View>
+            ) : (
+              <View style={g.summaryCard}>
+                <Ionicons
+                  name={
+                    detail.jenis === "online"
+                      ? "wifi-outline"
+                      : "school-outline"
+                  }
+                  size={18}
+                  color={Colors.primary}
+                />
+                <Text style={g.summaryLabel}>
+                  {detail.jenis === "online" ? "Online" : "Offline"}
+                </Text>
+              </View>
+            )}
+          </View>
+        ) : null}
+
+        {/* ── LOADING / ERROR / CONTENT ── */}
+        {loading ? (
+          <DetailSkeleton />
+        ) : error ? (
+          <View style={s.empty}>
+            <Ionicons name="wifi-outline" size={40} color={Colors.border} />
+            <Text style={s.emptyText}>Gagal memuat data</Text>
+            <Text style={{ fontSize: 12, color: Colors.hint }}>
+              Periksa koneksi internet kamu
+            </Text>
+            <TouchableOpacity
+              style={s.retryBtn}
+              onPress={fetchAll}
+              activeOpacity={0.75}
+            >
+              <Ionicons
+                name="refresh-outline"
+                size={15}
+                color={Colors.primary}
+              />
+              <Text style={s.retryText}>Coba Lagi</Text>
+            </TouchableOpacity>
           </View>
         ) : detail ? (
           <>
-            {/* Info Card */}
+            {/* INFO CARD */}
             <View style={s.infoCard}>
-              <InfoRow
-                icon="layers-outline"
-                label="Pertemuan"
-                value={`ke-${detail.nomor}`}
-              />
-              <InfoRow
-                icon={
-                  detail.jenis === "online" ? "wifi-outline" : "school-outline"
-                }
-                label="Jenis"
-                value={detail.jenis === "online" ? "Online" : "Offline"}
-              />
               <InfoRow
                 icon="time-outline"
                 label="Waktu"
@@ -304,52 +743,46 @@ export default function PertemuanDetail() {
                   value={detail.nama_ruangan}
                 />
               ) : null}
-              <View style={s.infoRow}>
-                <Ionicons name="ellipse-outline" size={14} color={C.muted} />
+              <View style={g.infoRow}>
+                <Ionicons
+                  name="ellipse-outline"
+                  size={14}
+                  color={Colors.hint}
+                />
                 <Text style={s.infoLabel}>Status</Text>
                 <StatusBadge status={detail.status} />
               </View>
-              {kehadiran && (
-                <View style={s.infoRow}>
+              {detail.jenis ? (
+                <View style={g.infoRow}>
                   <Ionicons
-                    name="checkmark-circle-outline"
+                    name={
+                      detail.jenis === "online"
+                        ? "wifi-outline"
+                        : "school-outline"
+                    }
                     size={14}
-                    color={C.muted}
+                    color={Colors.hint}
                   />
-                  <Text style={s.infoLabel}>Kehadiran</Text>
-                  <View
-                    style={[
-                      s.badge,
-                      kehadiran.is_hadir ? s.badgeSuccess : s.badgeDanger,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        s.badgeText,
-                        {
-                          color: kehadiran.is_hadir ? C.successText : C.danger,
-                        },
-                      ]}
-                    >
-                      {kehadiran.presensi ||
-                        (kehadiran.is_hadir ? "Hadir" : "Tidak Hadir")}
-                    </Text>
-                  </View>
+                  <Text style={s.infoLabel}>Mode</Text>
+                  <Text style={s.infoValue}>
+                    {detail.jenis === "online" ? "Online" : "Offline"}
+                  </Text>
                 </View>
-              )}
+              ) : null}
               {detail.judul ? (
                 <View style={s.judulBox}>
+                  <Text style={s.judulLabel}>Topik</Text>
                   <Text style={s.judulText}>{detail.judul}</Text>
                 </View>
               ) : null}
               {detail.deskripsi ? (
                 <Text style={s.deskripsiText}>
-                  {detail.deskripsi.replace(/<[^>]+>/g, " ").trim()}
+                  {stripHtml(detail.deskripsi)}
                 </Text>
               ) : null}
             </View>
 
-            {/* Tabs */}
+            {/* TABS */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -362,15 +795,21 @@ export default function PertemuanDetail() {
                 return (
                   <TouchableOpacity
                     key={t}
-                    style={[s.tab, active && s.tabActive]}
-                    onPress={() => setActiveTab(t)}
+                    style={[g.filterChip, active && g.filterChipActive]}
+                    onPress={() => handleTabPress(t)}
+                    activeOpacity={0.75}
                   >
                     <Ionicons
                       name={JENIS_ICON[t]}
                       size={14}
-                      color={active ? C.primary : C.muted}
+                      color={active ? "#fff" : Colors.muted}
                     />
-                    <Text style={[s.tabText, active && s.tabTextActive]}>
+                    <Text
+                      style={[
+                        g.filterChipText,
+                        active && g.filterChipTextActive,
+                      ]}
+                    >
                       {JENIS_LABEL[t]}
                     </Text>
                     {count > 0 && (
@@ -383,7 +822,7 @@ export default function PertemuanDetail() {
               })}
             </ScrollView>
 
-            {/* Content */}
+            {/* CONTENT AREA */}
             <View style={s.contentArea}>{renderContent()}</View>
           </>
         ) : null}
@@ -392,15 +831,9 @@ export default function PertemuanDetail() {
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function fmtTime(iso?: string) {
-  if (!iso) return "-";
-  return new Date(iso).toLocaleTimeString("id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
+// Small shared components
+// ─────────────────────────────────────────────────────────────────────────────
 function InfoRow({
   icon,
   label,
@@ -411,8 +844,8 @@ function InfoRow({
   value: string;
 }) {
   return (
-    <View style={s.infoRow}>
-      <Ionicons name={icon} size={14} color={C.muted} />
+    <View style={g.infoRow}>
+      <Ionicons name={icon} size={14} color={Colors.hint} />
       <Text style={s.infoLabel}>{label}</Text>
       <Text style={s.infoValue}>{value}</Text>
     </View>
@@ -420,96 +853,157 @@ function InfoRow({
 }
 
 function StatusBadge({ status }: { status?: string }) {
-  const map: Record<string, { bg: string; border: string; text: string }> = {
-    selesai: { bg: C.successBg, border: C.successBorder, text: C.successText },
-    berlangsung: {
-      bg: C.primaryLight,
-      border: C.primary + "40",
-      text: C.primary,
-    },
-    belum: { bg: C.warningBg, border: C.warningBorder, text: C.warningText },
-  };
-  const c = map[status || ""] || map.belum;
+  const c = STATUS_MAP[status || ""] || STATUS_MAP.belum;
   return (
     <View style={[s.badge, { backgroundColor: c.bg, borderColor: c.border }]}>
-      <Text style={[s.badgeText, { color: c.text }]}>{status || "belum"}</Text>
+      <Text style={[s.badgeText, { color: c.text }]}>{c.label}</Text>
     </View>
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Styles
+// ─────────────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
   header: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 52,
+    overflow: "hidden",
+  },
+  decor1: {
+    position: "absolute",
+    top: -30,
+    right: -30,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  decor2: {
+    position: "absolute",
+    bottom: -40,
+    left: -24,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  decor3: {
+    position: "absolute",
+    top: 28,
+    right: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,255,255,0.09)",
+  },
+  decor4: {
+    position: "absolute",
+    bottom: 16,
+    right: 90,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.07)",
+  },
+
+  headerTop: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: C.card,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
+    justifyContent: "space-between",
+    marginBottom: 14,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: C.primaryLight,
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  headerTitle: { fontSize: 15, fontWeight: "700", color: C.text },
-  headerSub: { fontSize: 12, color: C.muted, marginTop: 1 },
-  centered: { alignItems: "center", gap: 10, paddingVertical: 40 },
-  loadingText: { fontSize: 13, color: C.muted },
+  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
+
+  headerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  headerBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "capitalize",
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary,
+  },
+
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: -0.3,
+  },
+  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 2 },
+
+  summaryStrip: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginTop: -22,
+    gap: 8,
+  },
 
   infoCard: {
     margin: 14,
-    backgroundColor: C.card,
+    marginTop: 20,
+    backgroundColor: Colors.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: Colors.border,
     padding: 14,
     gap: 10,
   },
-  infoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  infoLabel: { fontSize: 12, color: C.muted, width: 72 },
-  infoValue: { fontSize: 13, color: C.text, fontWeight: "500", flex: 1 },
+  infoLabel: { fontSize: 12, color: Colors.muted, width: 72 },
+  infoValue: { fontSize: 13, color: Colors.text, fontWeight: "500", flex: 1 },
+
   badge: {
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderWidth: 1,
   },
-  badgeSuccess: { backgroundColor: C.successBg, borderColor: C.successBorder },
-  badgeDanger: { backgroundColor: C.dangerLight, borderColor: C.danger + "40" },
   badgeText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
+
   judulBox: {
     marginTop: 4,
-    backgroundColor: C.primaryLight,
+    backgroundColor: Colors.primaryLight,
     borderRadius: 8,
     padding: 10,
+    gap: 3,
   },
-  judulText: { fontSize: 13, fontWeight: "600", color: C.primary },
-  deskripsiText: { fontSize: 12, color: C.muted, lineHeight: 18 },
+  judulLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: Colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  judulText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
+  deskripsiText: { fontSize: 12, color: Colors.muted, lineHeight: 18 },
 
   tabScroll: { marginHorizontal: 14, marginBottom: 4 },
   tabRow: { flexDirection: "row", gap: 8, paddingRight: 14 },
-  tab: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.card,
-  },
-  tabActive: { backgroundColor: C.primaryLight, borderColor: C.primary },
-  tabText: { fontSize: 12, color: C.muted, fontWeight: "500" },
-  tabTextActive: { color: C.primary, fontWeight: "600" },
   tabBadge: {
-    backgroundColor: C.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 8,
     minWidth: 16,
     height: 16,
@@ -520,17 +1014,47 @@ const s = StyleSheet.create({
   tabBadgeText: { color: "#fff", fontSize: 9, fontWeight: "800" },
 
   contentArea: { margin: 14, marginTop: 10, paddingBottom: 40 },
-  emptyTab: { alignItems: "center", paddingVertical: 40, gap: 8 },
-  emptyTabText: { fontSize: 13, color: C.muted },
 
+  // ── Empty / Error ──────────────────────────────────────────────────────────
+  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.muted,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  retryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+    backgroundColor: Colors.primaryLight,
+    borderWidth: 1,
+    borderColor: Colors.primaryMid,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
+
+  emptyTab: { alignItems: "center", paddingVertical: 48, gap: 8 },
+  emptyTabTitle: {
+    fontSize: 14,
+    color: Colors.muted,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  emptyTabSub: { fontSize: 12, color: Colors.hint, textAlign: "center" },
+
+  // Materi
   materiCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: C.card,
+    backgroundColor: Colors.card,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: Colors.border,
     padding: 12,
   },
   extBadge: {
@@ -540,34 +1064,179 @@ const s = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   extText: { fontSize: 9, fontWeight: "800" },
   materiInfo: { flex: 1, gap: 3 },
-  materiTitle: { fontSize: 13, fontWeight: "600", color: C.text },
-  materiDesc: { fontSize: 11, color: C.muted, lineHeight: 16 },
-  materiMeta: { fontSize: 10, color: C.muted, textTransform: "capitalize" },
+  materiTitle: { fontSize: 13, fontWeight: "600", color: Colors.text },
+  materiDesc: { fontSize: 11, color: Colors.muted, lineHeight: 16 },
+  materiMeta: { fontSize: 10, color: Colors.hint, textTransform: "capitalize" },
 
-  genericCard: {
-    backgroundColor: C.card,
+  // Tugas
+  tugasCard: {
+    flexDirection: "row",
+    backgroundColor: Colors.card,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: Colors.border,
+    overflow: "hidden",
+  },
+  cardStripe: { width: 4 },
+  tugasIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#FFF7ED",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  tugasTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.text,
+    flex: 1,
+    lineHeight: 18,
+  },
+  tugasStatusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  tugasStatusText: { fontSize: 10, fontWeight: "600" },
+  badgeSuccessSmall: {
+    backgroundColor: Colors.successBg,
+    borderColor: Colors.successBorder,
+  },
+  badgeWarningSmall: {
+    backgroundColor: Colors.warningBg,
+    borderColor: Colors.warningBorder,
+  },
+  lateBadge: {
+    backgroundColor: Colors.dangerBg,
+    borderWidth: 1,
+    borderColor: Colors.dangerBorder,
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  lateBadgeText: { fontSize: 9, fontWeight: "700", color: Colors.dangerText },
+
+  // Forum
+  forumCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 12,
+    gap: 8,
+  },
+  forumHeader: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  forumIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: "#F0F9FF",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  forumTitle: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.text,
+    lineHeight: 18,
+  },
+  forumMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
+  forumMetaText: { fontSize: 11, color: Colors.hint },
+
+  // Teks
+  teksCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
     padding: 12,
     gap: 6,
   },
-  genericTitle: { fontSize: 13, fontWeight: "600", color: C.text },
-  genericDesc: { fontSize: 12, color: C.muted, lineHeight: 17 },
+  teksTitle: { fontSize: 13, fontWeight: "600", color: Colors.text },
+  teksBody: { fontSize: 12, color: Colors.muted, lineHeight: 19 },
+
+  // Vidcon
+  vidconCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E9D5FF",
+    padding: 12,
+    gap: 8,
+  },
+  vidconHeader: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  vidconIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#F5F3FF",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  vidconTitle: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.text,
+    lineHeight: 18,
+  },
+  vidconMeta: { fontSize: 11, color: Colors.hint, marginTop: 2 },
+
+  // Generic
+  genericCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 12,
+    gap: 6,
+  },
+  genericTitle: { fontSize: 13, fontWeight: "600", color: Colors.text },
+  genericDesc: { fontSize: 12, color: Colors.muted, lineHeight: 17 },
   deadlineRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  deadlineText: { fontSize: 11, color: C.danger, fontWeight: "500" },
+  deadlineText: { fontSize: 11, color: Colors.muted, fontWeight: "500" },
   linkBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
     alignSelf: "flex-start",
-    backgroundColor: C.primaryLight,
+    backgroundColor: Colors.primaryLight,
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  linkText: { fontSize: 12, color: C.primary, fontWeight: "600" },
+  linkText: { fontSize: 12, color: Colors.primary, fontWeight: "600" },
+
+  // Skeleton
+  skeletonCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 12,
+  },
+  skeletonExt: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: Colors.skeletonBase,
+    flexShrink: 0,
+  },
 });

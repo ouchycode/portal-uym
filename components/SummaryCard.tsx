@@ -10,12 +10,14 @@ type Props = {
 };
 
 export function SummaryCard({ icon, value, label, valueColor }: Props) {
+  const color = valueColor ?? Colors.primary;
+
   return (
-    <View style={g.summaryCard}>
-      <Ionicons name={icon} size={16} color={Colors.primary} />
-      <Text style={[g.summaryValue, valueColor ? { color: valueColor } : {}]}>
-        {value}
-      </Text>
+    <View
+      style={[g.summaryCard, valueColor ? { borderTopColor: valueColor } : {}]}
+    >
+      <Ionicons name={icon} size={16} color={color} />
+      <Text style={[g.summaryValue, { color }]}>{value}</Text>
       <Text style={g.summaryLabel}>{label}</Text>
     </View>
   );

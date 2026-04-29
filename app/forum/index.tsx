@@ -14,22 +14,40 @@ import {
   View,
 } from "react-native";
 
+// ─── Skeleton: struktur identik dengan card asli (row: icon + konten + chevron)
+const ForumSkeleton = () => (
+  <View style={styles.skeletonCard}>
+    {/* icon placeholder */}
+    <View style={styles.skeletonIcon} />
+    {/* konten */}
+    <View style={{ flex: 1, gap: 6 }}>
+      <SkeletonBlock height={14} width="60%" />
+      <SkeletonBlock height={11} width="40%" />
+    </View>
+    {/* chevron placeholder */}
+    <SkeletonBlock height={16} width={16} />
+  </View>
+);
+
 export default function Forum() {
   const [kelas, setKelas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     getKelas();
   }, []);
 
   const getKelas = async () => {
+    setLoading(true);
+    setError(false);
     try {
       const res = await API.get("/v2/lms/kelas_kuliah", {
         params: { periode: 20252 },
       });
       setKelas(res.data.data || []);
-    } catch (err: any) {
-      console.log(err.response?.data);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -42,43 +60,65 @@ export default function Forum() {
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header biru ── */}
+        {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.decor1} />
           <View style={styles.decor2} />
           <View style={styles.decor3} />
+          <View style={styles.decor4} />
+
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={20} color="#fff" />
+            <Ionicons name="chevron-back" size={18} color="#fff" />
+            <Text style={styles.backLabel}>Kembali</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Forum Diskusi</Text>
           <Text style={styles.headerSub}>
-            {!loading ? `${kelas.length} kelas tersedia` : "Memuat kelas..."}
+            {loading
+              ? "Memuat kelas..."
+              : error
+                ? "Gagal memuat data"
+                : `${kelas.length} kelas tersedia`}
           </Text>
         </View>
 
-        {/* ── Body ── */}
+        {/* BODY */}
         <View style={styles.body}>
           <Text style={styles.sectionLabel}>
             {loading
               ? "Memuat forum..."
-              : kelas.length === 0
-                ? "Tidak ada kelas ditemukan"
-                : `${kelas.length} kelas aktif`}
+              : error
+                ? "Gagal memuat data"
+                : kelas.length === 0
+                  ? "Tidak ada kelas ditemukan"
+                  : `${kelas.length} kelas aktif`}
           </Text>
 
-          {/* Skeleton */}
+          {/* ── SKELETON ── */}
           {loading ? (
-            [1, 2, 3, 4].map((i) => (
-              <View key={i} style={styles.skeletonCard}>
-                <SkeletonBlock height={14} width="60%" />
-                <SkeletonBlock height={11} width="40%" />
-              </View>
-            ))
+            [1, 2, 3, 4].map((i) => <ForumSkeleton key={i} />)
+          ) : error ? (
+            /* ── ERROR STATE ── */
+            <View style={styles.empty}>
+              <Ionicons name="wifi-outline" size={40} color={Colors.border} />
+              <Text style={styles.emptyText}>Gagal memuat data</Text>
+              <Text style={{ fontSize: 12, color: Colors.hint }}>
+                Periksa koneksi internet kamu
+              </Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={getKelas}>
+                <Ionicons
+                  name="refresh-outline"
+                  size={15}
+                  color={Colors.primary}
+                />
+                <Text style={styles.retryText}>Coba Lagi</Text>
+              </TouchableOpacity>
+            </View>
           ) : kelas.length === 0 ? (
+            /* ── EMPTY STATE ── */
             <View style={styles.empty}>
               <Ionicons
                 name="chatbubbles-outline"
@@ -88,16 +128,20 @@ export default function Forum() {
               <Text style={styles.emptyText}>Tidak ada kelas ditemukan</Text>
             </View>
           ) : (
-            kelas.map((k, i) => (
+            /* ── DATA ── */
+            kelas.map((k) => (
               <TouchableOpacity
-                key={i}
+                key={k.id}
                 style={styles.card}
                 activeOpacity={0.75}
                 onPress={() => {
                   if (!k.id) return;
                   router.push({
                     pathname: "/forum/[kelas]",
-                    params: { kelas: k.id },
+                    params: {
+                      kelas: k.id,
+                      mkNama: k.mata_kuliah?.nama || "",
+                    },
                   } as any);
                 }}
               >
@@ -131,7 +175,6 @@ export default function Forum() {
 }
 
 const styles = StyleSheet.create({
-  // ── Header ──
   header: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 20,
@@ -142,55 +185,64 @@ const styles = StyleSheet.create({
   },
   decor1: {
     position: "absolute",
-    top: -28,
-    right: -28,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.07)",
+    top: -30,
+    right: -30,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
   decor2: {
     position: "absolute",
     bottom: -40,
     left: -24,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
   decor3: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    top: 28,
+    right: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,255,255,0.09)",
+  },
+  decor4: {
+    position: "absolute",
+    bottom: 16,
+    right: 90,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.07)",
   },
   backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    gap: 4,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 14,
   },
+  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
     color: "#fff",
+    letterSpacing: -0.3,
   },
-  headerSub: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.6)",
-  },
+  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
 
-  // ── Body ──
   body: { paddingHorizontal: 16, paddingTop: 16 },
   sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
 
-  // ── Card ──
+  // ─── Card ────────────────────────────────────────────────────────────────────
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -206,18 +258,44 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14, fontWeight: "600", color: Colors.text },
   cardSub: { fontSize: 12, color: Colors.muted, marginTop: 2 },
 
-  // ── Skeleton ──
+  // ─── Skeleton ────────────────────────────────────────────────────────────────
   skeletonCard: {
+    flexDirection: "row", // sama persis dengan card asli
+    alignItems: "center",
     backgroundColor: Colors.card,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: 14,
+    padding: 12,
     marginBottom: 8,
-    gap: 8,
+    gap: 12,
+  },
+  skeletonIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: Colors.skeletonBase,
   },
 
-  // ── Empty ──
+  // ─── Empty / Error ───────────────────────────────────────────────────────────
   empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: { fontSize: 14, color: Colors.muted, fontWeight: "600" },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.muted,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  retryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+    backgroundColor: Colors.primaryLight,
+    borderWidth: 1,
+    borderColor: Colors.primaryMid,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

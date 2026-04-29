@@ -14,18 +14,36 @@ import {
   View,
 } from "react-native";
 
+// ─── Skeleton: row identik dengan card asli (icon + konten + chevron) ─────────
+const ForumKelasSkeleton = () => (
+  <View style={styles.skeletonCard}>
+    <View style={styles.skeletonIcon} />
+    <View style={{ flex: 1, gap: 6 }}>
+      <SkeletonBlock height={11} width="30%" />
+      <SkeletonBlock height={14} width="70%" />
+    </View>
+    <SkeletonBlock height={16} width={16} />
+  </View>
+);
+
 export default function ForumKelas() {
   const params = useLocalSearchParams();
   const kelas = Array.isArray(params.kelas) ? params.kelas[0] : params.kelas;
+  const mkNama = Array.isArray(params.mkNama)
+    ? params.mkNama[0]
+    : (params.mkNama as string) || "";
 
   const [forum, setForum] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (kelas) getForum();
   }, [kelas]);
 
   const getForum = async () => {
+    setLoading(true);
+    setError(false);
     try {
       const res = await API.get("/v2/lms/forum", {
         params: {
@@ -36,8 +54,8 @@ export default function ForumKelas() {
         },
       });
       setForum(res.data.data || []);
-    } catch (err: any) {
-      console.log(err.response?.data);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -50,43 +68,65 @@ export default function ForumKelas() {
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header biru ── */}
+        {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.decor1} />
           <View style={styles.decor2} />
           <View style={styles.decor3} />
+          <View style={styles.decor4} />
+
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={20} color="#fff" />
+            <Ionicons name="chevron-back" size={18} color="#fff" />
+            <Text style={styles.backLabel}>Kembali</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Forum Diskusi</Text>
+          <Text style={styles.headerTitle}>{mkNama || "Forum Diskusi"}</Text>
           <Text style={styles.headerSub}>
-            {!loading ? `${forum.length} topik ditemukan` : "Memuat forum..."}
+            {loading
+              ? "Memuat forum..."
+              : error
+                ? "Gagal memuat data"
+                : `${forum.length} topik ditemukan`}
           </Text>
         </View>
 
-        {/* ── Body ── */}
+        {/* BODY */}
         <View style={styles.body}>
           <Text style={styles.sectionLabel}>
             {loading
               ? "Memuat topik..."
-              : forum.length === 0
-                ? "Belum ada forum di kelas ini"
-                : `${forum.length} topik · urut per pertemuan`}
+              : error
+                ? "Gagal memuat data"
+                : forum.length === 0
+                  ? "Belum ada forum di kelas ini"
+                  : `${forum.length} topik · urut per pertemuan`}
           </Text>
 
-          {/* Skeleton */}
+          {/* ── SKELETON ── */}
           {loading ? (
-            [1, 2, 3].map((i) => (
-              <View key={i} style={styles.skeletonCard}>
-                <SkeletonBlock height={11} width="30%" />
-                <SkeletonBlock height={14} width="70%" />
-              </View>
-            ))
+            [1, 2, 3].map((i) => <ForumKelasSkeleton key={i} />)
+          ) : error ? (
+            /* ── ERROR STATE ── */
+            <View style={styles.empty}>
+              <Ionicons name="wifi-outline" size={40} color={Colors.border} />
+              <Text style={styles.emptyText}>Gagal memuat data</Text>
+              <Text style={{ fontSize: 12, color: Colors.hint }}>
+                Periksa koneksi internet kamu
+              </Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={getForum}>
+                <Ionicons
+                  name="refresh-outline"
+                  size={15}
+                  color={Colors.primary}
+                />
+                <Text style={styles.retryText}>Coba Lagi</Text>
+              </TouchableOpacity>
+            </View>
           ) : forum.length === 0 ? (
+            /* ── EMPTY STATE ── */
             <View style={styles.empty}>
               <Ionicons
                 name="chatbubbles-outline"
@@ -96,9 +136,10 @@ export default function ForumKelas() {
               <Text style={styles.emptyText}>Belum ada forum di kelas ini</Text>
             </View>
           ) : (
-            forum.map((f, i) => (
+            /* ── DATA ── */
+            forum.map((f) => (
               <TouchableOpacity
-                key={i}
+                key={f.id}
                 style={styles.card}
                 activeOpacity={0.75}
                 onPress={() => {
@@ -136,7 +177,6 @@ export default function ForumKelas() {
 }
 
 const styles = StyleSheet.create({
-  // ── Header ──
   header: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 20,
@@ -147,55 +187,64 @@ const styles = StyleSheet.create({
   },
   decor1: {
     position: "absolute",
-    top: -28,
-    right: -28,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.07)",
+    top: -30,
+    right: -30,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
   decor2: {
     position: "absolute",
     bottom: -40,
     left: -24,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
   decor3: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    top: 28,
+    right: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,255,255,0.09)",
+  },
+  decor4: {
+    position: "absolute",
+    bottom: 16,
+    right: 90,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.07)",
   },
   backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    gap: 4,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 14,
   },
+  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
     color: "#fff",
+    letterSpacing: -0.3,
   },
-  headerSub: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.6)",
-  },
+  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
 
-  // ── Body ──
   body: { paddingHorizontal: 16, paddingTop: 16 },
   sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
 
-  // ── Card ──
+  // ─── Card ────────────────────────────────────────────────────────────────────
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -216,18 +265,44 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 14, fontWeight: "600", color: Colors.text },
 
-  // ── Skeleton ──
+  // ─── Skeleton ────────────────────────────────────────────────────────────────
   skeletonCard: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.card,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: 14,
+    padding: 12,
     marginBottom: 8,
-    gap: 8,
+    gap: 12,
+  },
+  skeletonIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: Colors.skeletonBase,
   },
 
-  // ── Empty ──
+  // ─── Empty / Error ───────────────────────────────────────────────────────────
   empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: { fontSize: 14, color: Colors.muted, fontWeight: "600" },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.muted,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  retryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+    backgroundColor: Colors.primaryLight,
+    borderWidth: 1,
+    borderColor: Colors.primaryMid,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

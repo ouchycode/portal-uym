@@ -30,7 +30,6 @@ const JENIS_LABEL: Record<string, string> = {
   forum: "Forum",
 };
 
-// Warna spesifik halaman ini — tidak perlu masuk theme global
 const JENIS_COLOR: Record<
   string,
   { bg: string; border: string; color: string }
@@ -103,6 +102,7 @@ export default function Nilai() {
   const [data, setData] = useState<any[]>([]);
   const [periode, setPeriode] = useState(20252);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -111,14 +111,15 @@ export default function Nilai() {
 
   const getNilai = async () => {
     setLoading(true);
+    setError(false);
     setExpanded({});
     try {
       const res = await API.get("/v2/lms/nilai/me", {
         params: { page: 1, per_page: 50, periode },
       });
       setData(res.data.data || []);
-    } catch (err: any) {
-      console.log("❌ ERROR NILAI:", err.response?.data);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -139,23 +140,26 @@ export default function Nilai() {
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header biru ── */}
+        {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.decor1} />
           <View style={styles.decor2} />
           <View style={styles.decor3} />
+          <View style={styles.decor4} />
+
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={20} color="#fff" />
+            <Ionicons name="chevron-back" size={18} color="#fff" />
+            <Text style={styles.backLabel}>Kembali</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Nilai</Text>
           <Text style={styles.headerSub}>{periodeLabel}</Text>
         </View>
 
-        {/* ── Filter Periode ── */}
+        {/* FILTER PERIODE */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -175,7 +179,7 @@ export default function Nilai() {
               <Ionicons
                 name="calendar-outline"
                 size={13}
-                color={periode === opt.value ? Colors.primary : Colors.muted}
+                color={periode === opt.value ? "#fff" : Colors.muted}
               />
               <Text
                 style={[
@@ -190,8 +194,8 @@ export default function Nilai() {
         </ScrollView>
 
         <View style={styles.body}>
-          {/* ── Rata-rata semester card ── */}
-          {!loading && rataRataSemester !== null && (
+          {/* RATA-RATA SEMESTER CARD */}
+          {!loading && !error && rataRataSemester !== null && (
             <View style={styles.ipkCard}>
               <View style={styles.ipkLeft}>
                 <View style={g.iconWrap}>
@@ -215,12 +219,16 @@ export default function Nilai() {
             </View>
           )}
 
-          {/* ── Section label ── */}
+          {/* SECTION LABEL */}
           <Text style={styles.sectionLabel}>
-            {loading ? "Memuat nilai..." : `${data.length} kelas ditemukan`}
+            {loading
+              ? "Memuat nilai..."
+              : error
+                ? "Gagal memuat data"
+                : `${data.length} kelas ditemukan`}
           </Text>
 
-          {/* ── Skeleton ── */}
+          {/* SKELETON / ERROR / EMPTY / LIST */}
           {loading ? (
             [1, 2, 3, 4].map((i) => (
               <View key={i} style={styles.skeletonCard}>
@@ -231,6 +239,26 @@ export default function Nilai() {
                 </View>
               </View>
             ))
+          ) : error ? (
+            <View style={styles.empty}>
+              <Ionicons name="wifi-outline" size={40} color={Colors.border} />
+              <Text style={styles.emptyText}>Gagal memuat data</Text>
+              <Text style={{ fontSize: 12, color: Colors.hint }}>
+                Periksa koneksi internet kamu
+              </Text>
+              <TouchableOpacity
+                style={styles.retryBtn}
+                onPress={getNilai}
+                activeOpacity={0.75}
+              >
+                <Ionicons
+                  name="refresh-outline"
+                  size={15}
+                  color={Colors.primary}
+                />
+                <Text style={styles.retryText}>Coba Lagi</Text>
+              </TouchableOpacity>
+            </View>
           ) : data.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons
@@ -239,7 +267,7 @@ export default function Nilai() {
                 color={Colors.border}
               />
               <Text style={styles.emptyText}>Belum ada nilai tersedia</Text>
-              <Text style={styles.emptySubText}>
+              <Text style={{ fontSize: 12, color: Colors.hint }}>
                 untuk periode {periodeLabel}
               </Text>
             </View>
@@ -254,7 +282,6 @@ export default function Nilai() {
 
               return (
                 <View key={k.id_kelas_kuliah} style={styles.card}>
-                  {/* Card header — tap to expand */}
                   <TouchableOpacity
                     style={styles.cardHeader}
                     activeOpacity={0.75}
@@ -278,7 +305,6 @@ export default function Nilai() {
                           : "  ·  Belum ada nilai"}
                       </Text>
                     </View>
-                    {/* Rata-rata badge */}
                     <View
                       style={[
                         styles.badge,
@@ -302,7 +328,6 @@ export default function Nilai() {
                     />
                   </TouchableOpacity>
 
-                  {/* Expanded: detail nilai per pertemuan */}
                   {isExpanded && nilaiPertemuan.length > 0 && (
                     <View style={styles.detailContainer}>
                       {nilaiPertemuan.map((np, idx) => {
@@ -371,7 +396,6 @@ export default function Nilai() {
 }
 
 const styles = StyleSheet.create({
-  // ── Header ──
   header: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 20,
@@ -382,51 +406,60 @@ const styles = StyleSheet.create({
   },
   decor1: {
     position: "absolute",
-    top: -28,
-    right: -28,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.07)",
+    top: -30,
+    right: -30,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
   decor2: {
     position: "absolute",
     bottom: -40,
     left: -24,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
   decor3: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    top: 28,
+    right: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,255,255,0.09)",
+  },
+  decor4: {
+    position: "absolute",
+    bottom: 16,
+    right: 90,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.07)",
   },
   backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    gap: 4,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 14,
   },
+  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
     color: "#fff",
+    letterSpacing: -0.3,
   },
-  headerSub: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.6)",
-  },
+  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
 
-  // ── Filter ──
   filterScroll: { marginTop: 16 },
   filterRow: {
     flexDirection: "row",
@@ -435,11 +468,9 @@ const styles = StyleSheet.create({
     paddingRight: 32,
   },
 
-  // ── Body ──
   body: { paddingHorizontal: 16, paddingTop: 12 },
   sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
 
-  // ── IPK / rata-rata card ──
   ipkCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -458,7 +489,6 @@ const styles = StyleSheet.create({
   ipkValue: { fontSize: 24, fontWeight: "700", color: Colors.primary },
   ipkSks: { fontSize: 11, color: Colors.muted, marginTop: 1 },
 
-  // ── Card ──
   card: {
     backgroundColor: Colors.card,
     borderRadius: 10,
@@ -486,7 +516,6 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 14, fontWeight: "700" },
 
-  // ── Detail expand ──
   detailContainer: {
     borderTopWidth: 1,
     borderTopColor: Colors.border,
@@ -527,7 +556,6 @@ const styles = StyleSheet.create({
   },
   detailEmptyText: { fontSize: 12, color: Colors.muted },
 
-  // ── Skeleton ──
   skeletonCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -546,8 +574,25 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.skeletonBase,
   },
 
-  // ── Empty ──
-  empty: { alignItems: "center", paddingVertical: 56, gap: 6 },
-  emptyText: { fontSize: 14, color: Colors.muted, fontWeight: "600" },
-  emptySubText: { fontSize: 12, color: Colors.hint },
+  // ── Empty / Error ──────────────────────────────────────────────────────────
+  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.muted,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  retryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+    backgroundColor: Colors.primaryLight,
+    borderWidth: 1,
+    borderColor: Colors.primaryMid,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Status colors tidak ada di theme global karena spesifik ke halaman ini
 const STATUS_COLORS = {
   hadir: { color: "#16A34A", bg: "#F0FDF4", border: "#BBF7D0" },
   izin: { color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
@@ -34,7 +33,19 @@ const STATUS_CONFIG: Record<
 };
 
 type PresensiItem = {
-  pertemuan?: { nomor?: number; tanggal?: string; materi?: string };
+  id_pertemuan?: string;
+  pertemuan?: {
+    nomor?: number;
+    judul?: string;
+    jenis?: string;
+    waktu_mulai?: string;
+    waktu_selesai?: string;
+    kelas_kuliah?: {
+      mata_kuliah?: { kode?: string; nama?: string };
+      kelas?: { nama?: string };
+      jumlah_pertemuan?: number;
+    };
+  };
   ada_presensi?: boolean;
   is_hadir?: boolean;
   presensi?: string;
@@ -48,11 +59,37 @@ const getStatusKey = (d: PresensiItem): StatusKey => {
 };
 
 const getStatusLabel = (d: PresensiItem) => {
-  if (!d.ada_presensi) return "Belum Presensi";
+  if (!d.ada_presensi) return "Belum";
   if (d.presensi === "H") return "Hadir";
   if (d.presensi === "I") return "Izin";
   return "Tidak Hadir";
 };
+
+const fmtTanggal = (iso?: string) => {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleDateString("id-ID", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const fmtJam = (iso?: string) => {
+  if (!iso) return "";
+  return new Date(iso).toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const FILTER_OPTIONS: { key: StatusKey | "semua"; label: string }[] = [
+  { key: "semua", label: "Semua" },
+  { key: "hadir", label: "Hadir" },
+  { key: "izin", label: "Izin" },
+  { key: "alpha", label: "Tidak Hadir" },
+  { key: "belum", label: "Belum" },
+];
 
 export default function DetailKehadiran() {
   const params = useLocalSearchParams();
@@ -60,24 +97,35 @@ export default function DetailKehadiran() {
 
   const [data, setData] = useState<PresensiItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [filter, setFilter] = useState<StatusKey | "semua">("semua");
 
   useEffect(() => {
     if (kelas) getData();
   }, [kelas]);
 
   const getData = async () => {
+    setLoading(true);
+    setError(false);
     try {
       const res = await API.get(
         `/v2/lms/kehadiran_mahasiswa/kelas_kuliah/${kelas}/me`,
       );
       setData(res.data.data || []);
-    } catch (err: any) {
-      console.log("ERROR:", err.response?.data);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
   };
 
+  // INFO MK & KELAS
+  const namaMK =
+    data[0]?.pertemuan?.kelas_kuliah?.mata_kuliah?.nama?.trim() ||
+    "Detail Kehadiran";
+  const namaKelas = data[0]?.pertemuan?.kelas_kuliah?.kelas?.nama || "";
+
+  // STATS
   const totalHadir = data.filter((d) => d.presensi === "H").length;
   const totalIzin = data.filter((d) => d.presensi === "I").length;
   const totalAlpha = data.filter(
@@ -95,6 +143,22 @@ export default function DetailKehadiran() {
     { key: "belum", label: "Belum", value: totalBelum },
   ];
 
+  // SORT & FILTER
+  const dataSorted = [...data].sort((a, b) => {
+    const aTime = a.pertemuan?.waktu_mulai
+      ? new Date(a.pertemuan.waktu_mulai).getTime()
+      : 0;
+    const bTime = b.pertemuan?.waktu_mulai
+      ? new Date(b.pertemuan.waktu_mulai).getTime()
+      : 0;
+    return aTime - bTime;
+  });
+
+  const dataFiltered =
+    filter === "semua"
+      ? dataSorted
+      : dataSorted.filter((d) => getStatusKey(d) === filter);
+
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
@@ -102,26 +166,35 @@ export default function DetailKehadiran() {
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header biru ── */}
+        {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.decor1} />
           <View style={styles.decor2} />
           <View style={styles.decor3} />
+          <View style={styles.decor4} />
+
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={20} color="#fff" />
+            <Ionicons name="chevron-back" size={18} color="#fff" />
+            <Text style={styles.backLabel}>Kembali</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Detail Kehadiran</Text>
+          <Text style={styles.headerTitle} numberOfLines={2}>
+            {loading ? "Detail Kehadiran" : namaMK}
+          </Text>
           <Text style={styles.headerSub}>
-            {!loading ? `${data.length} pertemuan` : "Memuat data..."}
+            {loading
+              ? "Memuat data..."
+              : error
+                ? "Gagal memuat data"
+                : `${namaKelas}${namaKelas ? " · " : ""}${data.length} pertemuan`}
           </Text>
         </View>
 
         <View style={styles.body}>
-          {/* ── Summary Card ── */}
+          {/* SUMMARY CARD */}
           {loading ? (
             <View style={styles.summaryCardSkeleton}>
               <SkeletonBlock height={16} width="40%" />
@@ -131,13 +204,20 @@ export default function DetailKehadiran() {
                 ))}
               </View>
             </View>
-          ) : (
+          ) : !error ? (
             <View style={styles.summaryCard}>
-              {/* Persentase */}
+              {/* PERSENTASE */}
               <View style={styles.summaryHeader}>
                 <View>
                   <Text style={styles.summaryPctLabel}>Persentase Hadir</Text>
-                  <Text style={styles.summaryPct}>{pctHadir}%</Text>
+                  <Text
+                    style={[
+                      styles.summaryPct,
+                      pctHadir < 75 && { color: Colors.dangerText },
+                    ]}
+                  >
+                    {pctHadir}%
+                  </Text>
                 </View>
                 <View style={g.badgePrimary}>
                   <Text style={g.badgePrimaryText}>
@@ -146,14 +226,18 @@ export default function DetailKehadiran() {
                 </View>
               </View>
 
-              {/* Progress bar */}
+              {/* PROGRESS BAR */}
               <View style={styles.progressBg}>
                 <View
-                  style={[styles.progressFill, { width: `${pctHadir}%` }]}
+                  style={[
+                    styles.progressFill,
+                    { width: `${pctHadir}%` },
+                    pctHadir < 75 && { backgroundColor: Colors.dangerText },
+                  ]}
                 />
               </View>
 
-              {/* Stat boxes */}
+              {/* STAT BOXES */}
               <View style={styles.statRow}>
                 {SUMMARY.map(({ key, label, value }) => {
                   const cfg = STATUS_CONFIG[key];
@@ -176,73 +260,172 @@ export default function DetailKehadiran() {
                 })}
               </View>
             </View>
+          ) : null}
+
+          {/* WARNING KEHADIRAN */}
+          {!loading && !error && totalAlpha >= 2 && (
+            <View style={styles.warningKehadiran}>
+              <Ionicons
+                name="alert-circle-outline"
+                size={16}
+                color={Colors.warningText}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.warningTitle}>
+                  Kehadiran perlu diperhatikan
+                </Text>
+                <Text style={styles.warningDesc}>
+                  Kamu sudah tidak hadir {totalAlpha}x. Kehadiran yang kurang
+                  dapat mempengaruhi akses UTS/UAS.
+                </Text>
+              </View>
+            </View>
           )}
 
-          {/* ── Section label ── */}
-          <Text style={styles.sectionLabel}>
-            {loading ? "Memuat data..." : `${data.length} pertemuan`}
-          </Text>
-
-          {/* ── List ── */}
-          {loading
-            ? [1, 2, 3, 4, 5].map((i) => (
-                <View key={i} style={styles.skeletonCard}>
-                  <View style={styles.skeletonLeft} />
-                  <View style={{ flex: 1, gap: 8 }}>
-                    <SkeletonBlock width="50%" height={12} />
-                    <SkeletonBlock width="70%" height={11} />
-                    <SkeletonBlock width="30%" height={11} />
-                  </View>
-                </View>
-              ))
-            : data.map((d, i) => {
-                const key = getStatusKey(d);
-                const cfg = STATUS_CONFIG[key];
-                const status = getStatusLabel(d);
-
+          {/* FILTER CHIPS */}
+          {!loading && !error && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterRow}
+              style={styles.filterScroll}
+            >
+              {FILTER_OPTIONS.map((f) => {
+                const active = filter === f.key;
+                const cfg = f.key !== "semua" ? STATUS_CONFIG[f.key] : null;
                 return (
-                  <View key={i} style={styles.card}>
-                    {/* Icon */}
-                    <View
+                  <TouchableOpacity
+                    key={f.key}
+                    style={[
+                      g.filterChip,
+                      active && g.filterChipActive,
+                      active && cfg
+                        ? { backgroundColor: cfg.bg, borderColor: cfg.border }
+                        : null,
+                    ]}
+                    onPress={() => setFilter(f.key)}
+                    activeOpacity={0.75}
+                  >
+                    {cfg && (
+                      <Ionicons
+                        name={cfg.icon}
+                        size={12}
+                        color={active ? cfg.color : Colors.muted}
+                      />
+                    )}
+                    <Text
                       style={[
-                        styles.cardLeft,
-                        { backgroundColor: cfg.bg, borderColor: cfg.border },
+                        g.filterChipText,
+                        active && g.filterChipTextActive,
+                        active && cfg ? { color: cfg.color } : null,
                       ]}
                     >
-                      <Ionicons name={cfg.icon} size={18} color={cfg.color} />
-                    </View>
-
-                    {/* Content */}
-                    <View style={styles.cardContent}>
-                      <Text style={styles.cardTitle}>
-                        Pertemuan {d.pertemuan?.nomor ?? i + 1}
-                      </Text>
-                      {d.pertemuan?.tanggal ? (
-                        <Text style={styles.cardDate}>
-                          {d.pertemuan.tanggal}
-                        </Text>
-                      ) : null}
-                      {d.pertemuan?.materi ? (
-                        <Text style={styles.cardMateri} numberOfLines={1}>
-                          {d.pertemuan.materi}
-                        </Text>
-                      ) : null}
-                    </View>
-
-                    {/* Badge */}
-                    <View
-                      style={[
-                        styles.badge,
-                        { backgroundColor: cfg.bg, borderColor: cfg.border },
-                      ]}
-                    >
-                      <Text style={[styles.badgeText, { color: cfg.color }]}>
-                        {status}
-                      </Text>
-                    </View>
-                  </View>
+                      {f.label}
+                    </Text>
+                  </TouchableOpacity>
                 );
               })}
+            </ScrollView>
+          )}
+
+          {/* SECTION LABEL */}
+          <Text style={styles.sectionLabel}>
+            {loading
+              ? "Memuat data..."
+              : error
+                ? "Gagal memuat data"
+                : `${dataFiltered.length} pertemuan${filter !== "semua" ? ` · filter: ${FILTER_OPTIONS.find((f) => f.key === filter)?.label}` : ""}`}
+          </Text>
+
+          {/* LIST */}
+          {loading ? (
+            [1, 2, 3, 4, 5].map((i) => (
+              <View key={i} style={styles.skeletonCard}>
+                <View style={styles.skeletonLeft} />
+                <View style={{ flex: 1, gap: 8 }}>
+                  <SkeletonBlock width="50%" height={12} />
+                  <SkeletonBlock width="70%" height={11} />
+                  <SkeletonBlock width="30%" height={11} />
+                </View>
+              </View>
+            ))
+          ) : error ? (
+            <View style={styles.empty}>
+              <Ionicons name="wifi-outline" size={40} color={Colors.border} />
+              <Text style={styles.emptyText}>Gagal memuat data</Text>
+              <Text style={{ fontSize: 12, color: Colors.hint }}>
+                Periksa koneksi internet kamu
+              </Text>
+              <TouchableOpacity
+                style={styles.retryBtn}
+                onPress={getData}
+                activeOpacity={0.75}
+              >
+                <Ionicons
+                  name="refresh-outline"
+                  size={15}
+                  color={Colors.primary}
+                />
+                <Text style={styles.retryText}>Coba Lagi</Text>
+              </TouchableOpacity>
+            </View>
+          ) : dataFiltered.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="search-outline" size={40} color={Colors.border} />
+              <Text style={styles.emptyText}>
+                Tidak ada data untuk filter ini
+              </Text>
+            </View>
+          ) : (
+            dataFiltered.map((d, i) => {
+              const key = getStatusKey(d);
+              const cfg = STATUS_CONFIG[key];
+              const status = getStatusLabel(d);
+
+              return (
+                <View key={d.id_pertemuan ?? i} style={styles.card}>
+                  <View
+                    style={[
+                      styles.cardLeft,
+                      { backgroundColor: cfg.bg, borderColor: cfg.border },
+                    ]}
+                  >
+                    <Ionicons name={cfg.icon} size={18} color={cfg.color} />
+                  </View>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>
+                      Pertemuan {d.pertemuan?.nomor ?? i + 1}
+                      {d.pertemuan?.jenis ? ` · ${d.pertemuan.jenis}` : ""}
+                    </Text>
+                    {d.pertemuan?.waktu_mulai && (
+                      <Text style={styles.cardDate}>
+                        {fmtTanggal(d.pertemuan.waktu_mulai)}
+                        {" · "}
+                        {fmtJam(d.pertemuan.waktu_mulai)}
+                        {" – "}
+                        {fmtJam(d.pertemuan.waktu_selesai)}
+                      </Text>
+                    )}
+                    {d.pertemuan?.judul ? (
+                      <Text style={styles.cardMateri} numberOfLines={1}>
+                        {d.pertemuan.judul}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: cfg.bg, borderColor: cfg.border },
+                    ]}
+                  >
+                    <Text style={[styles.badgeText, { color: cfg.color }]}>
+                      {status}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -250,7 +433,6 @@ export default function DetailKehadiran() {
 }
 
 const styles = StyleSheet.create({
-  // ── Header ──
   header: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 20,
@@ -261,62 +443,70 @@ const styles = StyleSheet.create({
   },
   decor1: {
     position: "absolute",
-    top: -28,
-    right: -28,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.07)",
+    top: -30,
+    right: -30,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
   decor2: {
     position: "absolute",
     bottom: -40,
     left: -24,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
   decor3: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    top: 28,
+    right: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,255,255,0.09)",
+  },
+  decor4: {
+    position: "absolute",
+    bottom: 16,
+    right: 90,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.07)",
   },
   backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    gap: 4,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 14,
   },
+  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
     color: "#fff",
+    letterSpacing: -0.3,
   },
-  headerSub: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.6)",
-  },
+  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
 
-  // ── Body ──
   body: { paddingHorizontal: 16, paddingTop: 16 },
   sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
 
-  // ── Summary Card ──
   summaryCard: {
     backgroundColor: Colors.card,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   summaryCardSkeleton: {
     backgroundColor: Colors.card,
@@ -324,7 +514,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     gap: 8,
   },
   summaryHeader: {
@@ -359,7 +549,28 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 18, fontWeight: "700" },
   statLabel: { fontSize: 10, fontWeight: "500" },
 
-  // ── Card ──
+  warningKehadiran: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: Colors.warningBg,
+    borderWidth: 1,
+    borderColor: Colors.warningBorder,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+  },
+  warningTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.warningText,
+    marginBottom: 2,
+  },
+  warningDesc: { fontSize: 11, color: Colors.warningText, lineHeight: 16 },
+
+  filterScroll: { marginBottom: 4 },
+  filterRow: { flexDirection: "row", gap: 8, paddingRight: 16 },
+
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -371,11 +582,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     gap: 12,
   },
-  cardLeft: {
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 8,
-  },
+  cardLeft: { borderRadius: 8, borderWidth: 1, padding: 8 },
   cardContent: { flex: 1 },
   cardTitle: { fontSize: 13, fontWeight: "600", color: Colors.text },
   cardDate: { fontSize: 11, color: Colors.muted, marginTop: 2 },
@@ -388,7 +595,6 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 11, fontWeight: "600" },
 
-  // ── Skeleton ──
   skeletonCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -412,4 +618,26 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: Colors.skeletonBase,
   },
+
+  // ── Empty / Error ──────────────────────────────────────────────────────────
+  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.muted,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  retryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+    backgroundColor: Colors.primaryLight,
+    borderWidth: 1,
+    borderColor: Colors.primaryMid,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

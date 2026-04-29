@@ -15,12 +15,12 @@ export function SkeletonBlock({ width = "100%", height = 12 }: Props) {
       Animated.sequence([
         Animated.timing(shimmer, {
           toValue: 1,
-          duration: 900,
+          duration: 1000,
           useNativeDriver: true,
         }),
         Animated.timing(shimmer, {
           toValue: 0,
-          duration: 900,
+          duration: 1000,
           useNativeDriver: true,
         }),
       ]),
@@ -29,7 +29,7 @@ export function SkeletonBlock({ width = "100%", height = 12 }: Props) {
 
   const opacity = shimmer.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.5, 1],
+    outputRange: [0.45, 0.9],
   });
 
   return (
@@ -44,11 +44,11 @@ export function SkeletonBlock({ width = "100%", height = 12 }: Props) {
 const styles = StyleSheet.create({
   block: {
     backgroundColor: Colors.skeletonBase,
-    borderRadius: 6,
+    borderRadius: 4,
     overflow: "hidden",
   },
   shimmer: {
     backgroundColor: "#fff",
-    opacity: 0.4,
+    opacity: 0.5,
   },
 });

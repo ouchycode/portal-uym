@@ -1,3 +1,4 @@
+import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { useAuth } from "@/store/auth";
@@ -75,13 +76,20 @@ export default function DetailTugas() {
   const { id, pertemuan, judul, periode } = useLocalSearchParams();
   const token = useAuth((s) => s.token);
 
-  const uuidFromToken = token
-    ? JSON.parse(atob(token.split(".")[1]))?.uuid
-    : "";
+  const uuidFromToken = (() => {
+    try {
+      return JSON.parse(atob(token!.split(".")[1]))?.uuid ?? "";
+    } catch {
+      return "";
+    }
+  })();
 
   const [uploading, setUploading] = useState(false);
+  const [pengumpulan, setPengumpulan] = useState<any>(null);
+
   const [tugas, setTugas] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const [kelompok, setKelompok] = useState<any>(null);
   const [loadingKelompok, setLoadingKelompok] = useState(false);
@@ -105,6 +113,7 @@ export default function DetailTugas() {
 
   const getDetail = async () => {
     setLoading(true);
+    setError(false);
     try {
       const periodeValue = periode ?? 20252;
       const res = await API.get("/v2/lms/tugas", {
@@ -113,7 +122,9 @@ export default function DetailTugas() {
       const found = res.data.data.find((t: any) => String(t.id) === id);
       setTugas(found);
       if (found?.jenis_tugas === "kelompok") fetchKelompok();
-    } catch (err) {
+      fetchPengumpulan();
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -124,13 +135,21 @@ export default function DetailTugas() {
     try {
       const res = await API.get(`/v2/lms/tugas/${id}/kelompok/me`);
       setKelompok(res.data?.data || null);
-    } catch (err: any) {
+    } catch {
       setKelompok(null);
     } finally {
       setLoadingKelompok(false);
     }
   };
 
+  const fetchPengumpulan = async () => {
+    try {
+      const res = await API.get(`/v2/lms/tugas/${id}/pengumpulan/me`);
+      setPengumpulan(res.data?.data || res.data || null);
+    } catch (err: any) {
+      setPengumpulan(null);
+    }
+  };
   const handleBuatKelompok = async () => {
     if (!namaKelompok.trim()) {
       Alert.alert("Perhatian", "Nama kelompok tidak boleh kosong.");
@@ -166,7 +185,9 @@ export default function DetailTugas() {
     debounceTimeout.current = setTimeout(async () => {
       setLoadingSearch(true);
       try {
-        const res = await API.get(`/lms/tugas/${id}/kelompok/no_kelompok`);
+        const res = await API.get(`/lms/tugas/${id}/kelompok/no_kelompok`, {
+          params: { search: name },
+        });
         setSearchResults(res.data?.data || []);
       } catch {
         setSearchResults([]);
@@ -188,7 +209,6 @@ export default function DetailTugas() {
       Alert.alert("Error", "Mahasiswa sudah ada di kelompok.");
       return;
     }
-
     setAdding(true);
     try {
       const url = `/v2/lms/tugas/${id}/kelompok/${kelompok.id}`;
@@ -312,8 +332,11 @@ export default function DetailTugas() {
     ]);
   };
 
-  const sudah = tugas?.jumlah_pengumpulan > 0;
-  const waktuUpload = tugas?.waktu_pengumpulan || tugas?.updated_at || null;
+  const sudah =
+    Boolean(pengumpulan?.submitted_at) || tugas?.jumlah_pengumpulan > 0;
+  const rawWaktuUpload = pengumpulan?.submitted_at || null;
+
+  const waktuUpload = rawWaktuUpload ? formatDateTime(rawWaktuUpload) : null;
   const deadlineStatus = getDeadlineStatus(tugas?.waktu_selesai);
   const isKelompok = tugas?.jenis_tugas === "kelompok";
   const isDeadlinePassed =
@@ -330,17 +353,19 @@ export default function DetailTugas() {
 
   return (
     <SafeAreaView style={g.safeArea}>
-      {/* ── Header biru ── */}
+      {/* ── HEADER ── */}
       <View style={styles.header}>
         <View style={styles.decor1} />
         <View style={styles.decor2} />
         <View style={styles.decor3} />
+        <View style={styles.decor4} />
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={20} color="#fff" />
+          <Ionicons name="chevron-back" size={18} color="#fff" />
+          <Text style={styles.backLabel}>Kembali</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={2}>
           {judul || "Detail Tugas"}
@@ -357,7 +382,7 @@ export default function DetailTugas() {
         contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Informasi Tugas ── */}
+        {/* ── INFO TUGAS ── */}
         <View style={g.card}>
           <SectionHeader
             icon="information-circle-outline"
@@ -365,6 +390,23 @@ export default function DetailTugas() {
           />
           {loading ? (
             <SkeletonRows />
+          ) : error ? (
+            // Konsisten: icon size 40, emptyText, retryBtn
+            <View style={styles.inlineEmpty}>
+              <Ionicons name="wifi-outline" size={40} color={Colors.border} />
+              <Text style={styles.emptyText}>Gagal memuat data</Text>
+              <Text style={{ fontSize: 12, color: Colors.hint }}>
+                Periksa koneksi internet kamu
+              </Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={getDetail}>
+                <Ionicons
+                  name="refresh-outline"
+                  size={15}
+                  color={Colors.primary}
+                />
+                <Text style={styles.retryText}>Coba Lagi</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <>
               <InfoRow
@@ -395,14 +437,28 @@ export default function DetailTugas() {
           )}
         </View>
 
-        {/* ── Kelompok ── */}
+        {/* ── KELOMPOK ── */}
         {!loading && isKelompok && (
           <View style={g.card}>
             <SectionHeader icon="people-outline" title="Kelompok Saya" />
             {loadingKelompok ? (
-              <View
-                style={[styles.skeletonBlock, { height: 50, borderRadius: 8 }]}
-              />
+              // Konsisten: menyerupai shape kelompokBox
+              <View style={{ gap: 10 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <SkeletonBlock width={36} height={36} />
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <SkeletonBlock height={14} width="50%" />
+                    <SkeletonBlock height={11} width="35%" />
+                  </View>
+                </View>
+                <SkeletonBlock height={32} width="45%" />
+              </View>
             ) : kelompok ? (
               <>
                 <View style={styles.kelompokBox}>
@@ -526,7 +582,7 @@ export default function DetailTugas() {
           </View>
         )}
 
-        {/* ── Waktu Tugas ── */}
+        {/* ── WAKTU TUGAS ── */}
         <View style={g.card}>
           <SectionHeader icon="calendar-outline" title="Waktu Tugas" />
           {loading ? (
@@ -599,21 +655,15 @@ export default function DetailTugas() {
           )}
         </View>
 
-        {/* ── Deskripsi ── */}
+        {/* ── DESKRIPSI ── */}
         <View style={g.card}>
           <SectionHeader icon="document-text-outline" title="Deskripsi" />
           {loading ? (
-            <>
-              <View
-                style={[
-                  styles.skeletonBlock,
-                  { height: 12, width: "100%", marginBottom: 6 },
-                ]}
-              />
-              <View
-                style={[styles.skeletonBlock, { height: 12, width: "70%" }]}
-              />
-            </>
+            <View style={{ gap: 6 }}>
+              <SkeletonBlock height={12} width="100%" />
+              <SkeletonBlock height={12} width="80%" />
+              <SkeletonBlock height={12} width="70%" />
+            </View>
           ) : (
             <Text style={styles.desc}>
               {stripHtml(tugas?.deskripsi) || "Tidak ada deskripsi."}
@@ -621,13 +671,11 @@ export default function DetailTugas() {
           )}
         </View>
 
-        {/* ── File Dosen ── */}
+        {/* ── FILE DOSEN ── */}
         <View style={g.card}>
           <SectionHeader icon="attach-outline" title="File Tugas dari Dosen" />
           {loading ? (
-            <View
-              style={[styles.skeletonBlock, { height: 42, borderRadius: 8 }]}
-            />
+            <SkeletonBlock height={42} width="100%" />
           ) : tugas?.lampiran_file?.url ? (
             <TouchableOpacity
               style={styles.fileBtn}
@@ -648,13 +696,14 @@ export default function DetailTugas() {
           )}
         </View>
 
-        {/* ── Pengumpulan ── */}
+        {/* ── PENGUMPULAN ── */}
         <View style={g.card}>
           <SectionHeader icon="cloud-upload-outline" title="Pengumpulan Saya" />
           {loading ? (
-            <View
-              style={[styles.skeletonBlock, { height: 50, borderRadius: 8 }]}
-            />
+            <View style={{ gap: 6 }}>
+              <SkeletonBlock height={14} width="60%" />
+              <SkeletonBlock height={11} width="45%" />
+            </View>
           ) : sudah ? (
             <View style={g.badgeSuccess}>
               <Ionicons
@@ -676,7 +725,7 @@ export default function DetailTugas() {
           )}
         </View>
 
-        {/* ── Upload Button ── */}
+        {/* ── BUTTON UPLOAD ── */}
         {!loading &&
           (canUpload ? (
             <TouchableOpacity
@@ -722,7 +771,7 @@ export default function DetailTugas() {
           ))}
       </ScrollView>
 
-      {/* ── Modal Buat Kelompok ── */}
+      {/* ── MODAL BUAT KELOMPOK ── */}
       <Modal
         visible={showKelompokModal}
         transparent
@@ -765,7 +814,7 @@ export default function DetailTugas() {
         </View>
       </Modal>
 
-      {/* ── Modal Tambah Anggota ── */}
+      {/* ── MODAL TAMBAH ANGGOTA ── */}
       <Modal
         visible={showTambahModal}
         transparent
@@ -876,7 +925,7 @@ export default function DetailTugas() {
   );
 }
 
-// ── Sub-components ──
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SectionHeader({ icon, title }: { icon: any; title: string }) {
   return (
@@ -927,97 +976,115 @@ function InfoRow({ icon, label, value, badge }: any) {
   );
 }
 
+// Skeleton menyerupai infoRow: iconWrap + label + value
 function SkeletonRows() {
   return (
-    <>
+    <View style={{ gap: 12 }}>
       {[1, 2, 3].map((i) => (
-        <View key={i} style={[g.infoRow, { marginBottom: 4 }]}>
-          <View
-            style={[
-              styles.skeletonBlock,
-              { width: 32, height: 32, borderRadius: 8 },
-            ]}
-          />
+        <View key={i} style={[g.infoRow, { alignItems: "center" }]}>
+          <SkeletonBlock height={32} width={32} />
           <View style={{ flex: 1, gap: 6 }}>
-            <View
-              style={[styles.skeletonBlock, { height: 10, width: "35%" }]}
-            />
-            <View
-              style={[styles.skeletonBlock, { height: 13, width: "60%" }]}
-            />
+            <SkeletonBlock height={10} width="35%" />
+            <SkeletonBlock height={13} width="60%" />
           </View>
         </View>
       ))}
-    </>
+    </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  // ── Header biru ──
   header: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 36,
+    paddingBottom: 28,
     overflow: "hidden",
     gap: 4,
   },
   decor1: {
     position: "absolute",
-    top: -28,
-    right: -28,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.07)",
+    top: -30,
+    right: -30,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
   decor2: {
     position: "absolute",
     bottom: -40,
     left: -24,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
   decor3: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    top: 28,
+    right: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,255,255,0.09)",
+  },
+  decor4: {
+    position: "absolute",
+    bottom: 16,
+    right: 90,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.07)",
   },
   backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    gap: 4,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 14,
   },
+  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
     color: "#fff",
+    letterSpacing: -0.3,
+    lineHeight: 28,
   },
-  headerSub: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.6)",
+  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 2 },
+
+  // Konsisten dengan halaman lain: icon 40, paddingVertical 56
+  inlineEmpty: { alignItems: "center", paddingVertical: 40, gap: 8 },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.muted,
+    fontWeight: "600",
+    textAlign: "center",
   },
 
-  // ── Page title ──
-  pageTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 16,
-    lineHeight: 26,
+  // Konsisten: paddingHorizontal 16, paddingVertical 9, borderRadius 8, gap 6
+  retryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+    backgroundColor: Colors.primaryLight,
+    borderWidth: 1,
+    borderColor: Colors.primaryMid,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
   },
+  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 
-  // ── Kelompok ──
   kelompokBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -1040,7 +1107,6 @@ const styles = StyleSheet.create({
   },
   tambahAnggotaBtnText: { color: "#fff", fontSize: 12, fontWeight: "600" },
 
-  // ── Anggota ──
   anggotaList: { gap: 8, marginTop: 4 },
   anggotaItem: { flexDirection: "row", alignItems: "center", gap: 10 },
   anggotaItemMe: {
@@ -1068,7 +1134,6 @@ const styles = StyleSheet.create({
   anggotaName: { fontSize: 13, fontWeight: "600", color: Colors.text },
   anggotaNim: { fontSize: 10, color: Colors.muted, marginTop: 1 },
 
-  // ── Buat kelompok ──
   buatKelompokBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -1082,7 +1147,6 @@ const styles = StyleSheet.create({
   },
   buatKelompokText: { fontSize: 13, fontWeight: "700", color: Colors.primary },
 
-  // ── Deadline banner ──
   deadlineBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -1095,7 +1159,6 @@ const styles = StyleSheet.create({
   },
   deadlineBannerText: { fontSize: 12, fontWeight: "600" },
 
-  // ── File & desc ──
   desc: { fontSize: 13, color: Colors.muted, lineHeight: 20 },
   fileBtn: {
     flexDirection: "row",
@@ -1116,7 +1179,6 @@ const styles = StyleSheet.create({
   },
   submittedTime: { fontSize: 11, color: Colors.muted, marginTop: 2 },
 
-  // ── Badge fallback ──
   badgeOther: {
     alignSelf: "flex-start",
     flexDirection: "row",
@@ -1128,10 +1190,6 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
 
-  // ── Skeleton ──
-  skeletonBlock: { backgroundColor: Colors.skeletonBase, borderRadius: 6 },
-
-  // ── Modal ──
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.45)",
@@ -1151,7 +1209,6 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 16, fontWeight: "700", color: Colors.text },
 
-  // ── Search result ──
   searchResultItem: {
     flexDirection: "row",
     alignItems: "center",

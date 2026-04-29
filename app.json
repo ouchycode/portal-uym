@@ -7,13 +7,11 @@
     "icon": "./assets/images/logo-uym.png",
     "scheme": "portaluym",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#1A4C8B",
         "foregroundImage": "./assets/images/logo-uym.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.uym.portal"
     },
@@ -27,11 +25,18 @@
           "resizeMode": "contain",
           "backgroundColor": "#1A4C8B"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cfd4f0dd-9f2c-4a63-91cb-fff8a834b1e0"
+      }
     }
   }
 }
