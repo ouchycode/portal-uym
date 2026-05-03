@@ -198,19 +198,15 @@ export default function UjianKerjakan() {
           showsVerticalScrollIndicator={false}
         >
           {/* header skeleton */}
-          <View style={[styles.header, { paddingBottom: 36 }]}>
-            <View style={styles.decor1} />
-            <View style={styles.decor2} />
-            <View style={styles.decor3} />
-            <View style={styles.decor4} />
+          <View style={[g.header, { paddingBottom: 36 }]}>
             <View style={{ gap: 8, marginTop: 8 }}>
               <SkeletonBlock height={12} width="30%" />
               <SkeletonBlock height={22} width="60%" />
             </View>
           </View>
 
-          <View style={styles.body}>
-            <Text style={styles.sectionLabel}>Memuat detail ujian...</Text>
+          <View style={g.body}>
+            <Text style={g.sectionLabel}>Memuat detail ujian...</Text>
             {[1, 2, 3].map((i) => (
               <UjianSkeleton key={i} />
             ))}
@@ -229,36 +225,30 @@ export default function UjianKerjakan() {
           contentContainerStyle={{ paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.header}>
-            <View style={styles.decor1} />
-            <View style={styles.decor2} />
-            <View style={styles.decor3} />
-            <View style={styles.decor4} />
+          <View style={g.header}>
             <TouchableOpacity
-              style={styles.backBtnHeader}
+              style={g.backBtn}
               onPress={() => router.back()}
               activeOpacity={0.7}
             >
               <Ionicons name="chevron-back" size={18} color="#fff" />
-              <Text style={styles.backBtnLabel}>Kembali</Text>
+              <Text style={g.backLabel}>Kembali</Text>
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Detail Ujian</Text>
+            <Text style={g.headerTitle}>Detail Ujian</Text>
           </View>
 
-          <View style={styles.body}>
-            <View style={styles.empty}>
+          <View style={g.body}>
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={getDetail}>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
+              <TouchableOpacity style={g.retryBtn} onPress={getDetail}>
                 <Ionicons
                   name="refresh-outline"
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -267,7 +257,6 @@ export default function UjianKerjakan() {
     );
   }
 
-  // ── NOT FOUND STATE ──────────────────────────────────────────────────────
   if (!ujian) {
     return (
       <SafeAreaView style={g.safeArea}>
@@ -276,30 +265,26 @@ export default function UjianKerjakan() {
           contentContainerStyle={{ paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.header}>
-            <View style={styles.decor1} />
-            <View style={styles.decor2} />
-            <View style={styles.decor3} />
-            <View style={styles.decor4} />
+          <View style={g.header}>
             <TouchableOpacity
-              style={styles.backBtnHeader}
+              style={g.backBtn}
               onPress={() => router.back()}
               activeOpacity={0.7}
             >
               <Ionicons name="chevron-back" size={18} color="#fff" />
-              <Text style={styles.backBtnLabel}>Kembali</Text>
+              <Text style={g.backLabel}>Kembali</Text>
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Detail Ujian</Text>
+            <Text style={g.headerTitle}>Detail Ujian</Text>
           </View>
 
-          <View style={styles.body}>
-            <View style={styles.empty}>
+          <View style={g.body}>
+            <View style={g.empty}>
               <Ionicons
                 name="document-outline"
                 size={40}
                 color={Colors.border}
               />
-              <Text style={styles.emptyText}>Ujian tidak ditemukan</Text>
+              <Text style={g.emptyTitle}>Ujian tidak ditemukan</Text>
             </View>
           </View>
         </ScrollView>
@@ -316,8 +301,6 @@ export default function UjianKerjakan() {
           contentContainerStyle={{ paddingBottom: 40 }}
         >
           <View style={styles.hasilHeader}>
-            <View style={styles.decor1} />
-            <View style={styles.decor2} />
             <View style={styles.hasilIcon}>
               <Ionicons name="checkmark-circle" size={40} color="#fff" />
             </View>
@@ -325,13 +308,13 @@ export default function UjianKerjakan() {
             <Text style={styles.hasilSub}>{ujian.judul}</Text>
           </View>
 
-          <View style={styles.body}>
-            <View style={styles.hasilCard}>
+          <View style={g.body}>
+            <View style={g.card}>
               <View style={styles.hasilRow}>
                 <Text style={styles.hasilLabel}>Total Soal</Text>
                 <Text style={styles.hasilValue}>{allSoal.length}</Text>
               </View>
-              <View style={styles.divider} />
+              <View style={g.divider} />{" "}
               <View style={styles.hasilRow}>
                 <Text style={styles.hasilLabel}>Dijawab</Text>
                 <Text
@@ -340,7 +323,7 @@ export default function UjianKerjakan() {
                   {jumlahDijawab}
                 </Text>
               </View>
-              <View style={styles.divider} />
+              <View style={g.divider} />{" "}
               <View style={styles.hasilRow}>
                 <Text style={styles.hasilLabel}>Tidak Dijawab</Text>
                 <Text
@@ -354,7 +337,7 @@ export default function UjianKerjakan() {
                   {jumlahBelum}
                 </Text>
               </View>
-              <View style={styles.divider} />
+              <View style={g.divider} />
               <View style={styles.hasilRow}>
                 <Text style={styles.hasilLabel}>Status</Text>
                 <Text
@@ -391,32 +374,28 @@ export default function UjianKerjakan() {
           style={{ flex: 1, backgroundColor: Colors.bg }}
           contentContainerStyle={{ paddingBottom: 40 }}
         >
-          <View style={styles.header}>
-            <View style={styles.decor1} />
-            <View style={styles.decor2} />
-            <View style={styles.decor3} />
-            <View style={styles.decor4} />
+          <View style={g.header}>
             <TouchableOpacity
-              style={styles.backBtnHeader}
+              style={g.backBtn}
               onPress={() => router.back()}
               activeOpacity={0.7}
             >
               <Ionicons name="chevron-back" size={18} color="#fff" />
-              <Text style={styles.backBtnLabel}>Kembali</Text>
+              <Text style={g.backLabel}>Kembali</Text>
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>{ujian.judul}</Text>
-            <Text style={styles.headerSub}>
+            <Text style={g.headerTitle}>{ujian.judul}</Text>
+            <Text style={g.headerSub}>
               {ujian.kelas_kuliah?.mata_kuliah?.nama || "-"}
             </Text>
           </View>
 
-          <View style={styles.body}>
+          <View style={g.body}>
             {/* INFO CARD */}
-            <View style={styles.infoCard}>
+            <View style={[g.card, { padding: 14, gap: 8 }]}>
               <Text style={styles.infoCardTitle}>
                 Perhatian sebelum memulai
               </Text>
-              <View style={styles.divider} />
+              <View style={g.divider} />
               <View style={g.infoRow}>
                 <Ionicons
                   name="help-circle-outline"
@@ -478,22 +457,14 @@ export default function UjianKerjakan() {
                   pembatasan?.uas?.memenuhi_syarat === false);
 
               return isBlokir ? (
-                <View
-                  style={[
-                    styles.warningCard,
-                    {
-                      backgroundColor: Colors.dangerBg,
-                      borderColor: Colors.dangerBorder,
-                    },
-                  ]}
-                >
+                <View style={g.warningBox}>
                   <Ionicons
                     name="card-outline"
                     size={16}
                     color={Colors.dangerText}
                   />
                   <Text
-                    style={[styles.warningText, { color: Colors.dangerText }]}
+                    style={[g.warningBoxText, { color: Colors.dangerText }]}
                   >
                     Akses ujian diblokir karena tunggakan keuangan. Hubungi
                     bagian keuangan kampus.
@@ -501,13 +472,13 @@ export default function UjianKerjakan() {
                 </View>
               ) : (
                 <>
-                  <View style={styles.warningCard}>
+                  <View style={g.warningBox}>
                     <Ionicons
                       name="alert-circle-outline"
                       size={16}
                       color={Colors.warningText}
                     />
-                    <Text style={styles.warningText}>
+                    <Text style={g.warningBoxText}>
                       Pastikan koneksi internet stabil. Timer berjalan setelah
                       klik Mulai dan tidak bisa dihentikan.
                     </Text>
@@ -538,13 +509,9 @@ export default function UjianKerjakan() {
     <SafeAreaView style={[g.safeArea, { backgroundColor: Colors.bg }]}>
       {/* TOP BAR */}
       <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.navBtn}
-          onPress={() => setShowNav(true)}
-          activeOpacity={0.75}
-        >
+        <TouchableOpacity style={g.retryBtn} onPress={() => setShowNav(true)}>
           <Ionicons name="grid-outline" size={18} color={Colors.primary} />
-          <Text style={styles.navBtnText}>
+          <Text style={g.retryText}>
             {currentIdx + 1}/{allSoal.length}
           </Text>
         </TouchableOpacity>
@@ -864,12 +831,11 @@ export default function UjianKerjakan() {
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  // ── skeleton ──
   skeletonCard: {
     flexDirection: "row",
     backgroundColor: Colors.card,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     marginBottom: 10,
     overflow: "hidden",
@@ -882,127 +848,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.skeletonBase,
   },
 
-  // ── empty / error ──
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
-
-  // ── section label ──
-  sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
-
-  // ── header ──
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 36,
-    overflow: "hidden",
-    gap: 4,
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  backBtnHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 14,
-  },
-  backBtnLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
-
-  body: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
-
   // ── info card ──
   infoCard: {
     backgroundColor: Colors.card,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     padding: 14,
     gap: 8,
   },
   infoCardTitle: { fontSize: 14, fontWeight: "700", color: Colors.text },
-  divider: { height: 1, backgroundColor: Colors.border },
   infoText: { fontSize: 13, color: Colors.muted, flex: 1 },
-
-  warningCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: Colors.warningBg,
-    borderWidth: 1,
-    borderColor: Colors.warningBorder,
-    borderRadius: 10,
-    padding: 12,
-  },
-  warningText: {
-    fontSize: 12,
-    color: Colors.warningText,
-    flex: 1,
-    lineHeight: 18,
-  },
 
   mulaiBtn: {
     flexDirection: "row",
@@ -1027,18 +883,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
     gap: 8,
   },
-  navBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-  },
-  navBtnText: { fontSize: 12, fontWeight: "700", color: Colors.primary },
+
   topBarCenter: { flex: 1, alignItems: "center" },
   topBarTitle: { fontSize: 13, fontWeight: "700", color: Colors.text },
   topBarSub: { fontSize: 10, color: Colors.muted },
@@ -1049,7 +894,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderWidth: 1,
+    borderWidth: 0.5,
   },
   timerNormal: {
     backgroundColor: Colors.primaryLight,
@@ -1100,7 +945,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: Colors.card,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     padding: 12,
   },
@@ -1113,7 +958,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     backgroundColor: Colors.bg,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     justifyContent: "center",
     alignItems: "center",
@@ -1135,7 +980,7 @@ const styles = StyleSheet.create({
   essayInput: {
     backgroundColor: Colors.card,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     padding: 14,
     fontSize: 14,
@@ -1163,7 +1008,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.primaryMid,
   },
   navArrowText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
@@ -1225,7 +1070,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 10,
     backgroundColor: Colors.bg,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     justifyContent: "center",
     alignItems: "center",
@@ -1261,7 +1106,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
     borderRadius: 8,
     paddingVertical: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   cancelBtnText: { fontSize: 13, fontWeight: "600", color: Colors.muted },
@@ -1292,14 +1137,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   hasilSub: { fontSize: 13, color: "rgba(255,255,255,0.65)" },
-  hasilCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 16,
-    gap: 10,
-  },
+
   hasilRow: {
     flexDirection: "row",
     alignItems: "center",

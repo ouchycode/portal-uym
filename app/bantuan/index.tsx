@@ -85,27 +85,22 @@ export default function Bantuan() {
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <View style={styles.decor4} />
-
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={styles.backLabel}>Kembali</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Pusat Bantuan</Text>
-          <Text style={styles.headerSub}>
-            Universitas Yatsi Madani · SIAKAD
-          </Text>
+        <View style={g.header}>
+          <View style={g.headerTop}>
+            <TouchableOpacity
+              style={g.backBtn}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Text style={g.backLabel}>Kembali</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={g.headerTitle}>Pusat Bantuan</Text>
+          <Text style={g.headerSub}>Universitas Yatsi Madani · SIAKAD</Text>
         </View>
 
-        <View style={styles.body}>
+        <View style={g.body}>
           {/* INFO BOX */}
           <View style={g.infoBox}>
             <Ionicons
@@ -130,7 +125,17 @@ export default function Bantuan() {
             {CONTACTS.map((c, i) => (
               <TouchableOpacity
                 key={i}
-                style={[styles.contactCard, !c.action && { opacity: 0.8 }]}
+                style={[
+                  g.card,
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: 14,
+                    marginBottom: 8,
+                  },
+                  !c.action && { opacity: 0.8 },
+                ]}
                 onPress={c.action}
                 disabled={!c.action}
                 activeOpacity={0.75}
@@ -139,8 +144,8 @@ export default function Bantuan() {
                   <Ionicons name={c.icon} size={18} color={Colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.contactLabel}>{c.label}</Text>
-                  <Text style={styles.contactValue}>{c.value}</Text>
+                  <Text style={g.infoLabel}>{c.label}</Text>
+                  <Text style={g.infoValue}>{c.value}</Text>
                 </View>
                 {c.action && (
                   <Ionicons name="open-outline" size={14} color={Colors.hint} />
@@ -217,106 +222,13 @@ export default function Bantuan() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 36,
-    overflow: "hidden",
-    gap: 4,
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 14,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
-
-  // ── body ──
-  // gap dihapus; spacing diatur per-section lewat marginTop di sectionWrap & jamCard
-  body: { paddingHorizontal: 16, paddingTop: 16 },
   sectionWrap: { marginTop: 20 },
-
-  // ── contact ──
-  contactCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: Colors.card,
-    borderRadius: 12, // was 8 → selaras dengan card di Tugas/Ujian
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14, // was 12 → selaras
-    marginBottom: 8,
-  },
-  contactLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: Colors.muted,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-    marginBottom: 2,
-  },
-  contactValue: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: Colors.text,
-  },
 
   // ── jam operasional ──
   jamCard: {
     backgroundColor: Colors.primaryLight,
     borderRadius: 12, // was 8
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.primaryMid,
     borderLeftWidth: 3,
     borderLeftColor: Colors.primary,
@@ -351,7 +263,7 @@ const styles = StyleSheet.create({
   faqCard: {
     backgroundColor: Colors.card,
     borderRadius: 12, // was 8
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     padding: 14,
     marginBottom: 8,

@@ -22,10 +22,14 @@ function fmtDate(iso?: string) {
   });
 }
 
-// ── Skeleton for one pertemuan row ──────────────────────────────────────────
 function ItemSkeleton() {
   return (
-    <View style={s.skeletonItem}>
+    <View
+      style={[
+        g.card,
+        { flexDirection: "row", alignItems: "center", gap: 10, padding: 12 },
+      ]}
+    >
       <View style={s.skeletonCircle} />
       <View style={{ flex: 1, gap: 7 }}>
         <SkeletonBlock height={13} width="65%" />
@@ -43,38 +47,17 @@ function ItemSkeleton() {
   );
 }
 
-// ── Skeleton for summary strip ───────────────────────────────────────────────
-function SummarySkeleton() {
-  return (
-    <View style={s.summaryOuter}>
-      <View style={s.summaryStrip}>
-        {[1, 2, 3].map((i) => (
-          <View key={i} style={[g.summaryCard, { flex: 1, gap: 6 }]}>
-            <SkeletonBlock height={22} width="50%" />
-            <SkeletonBlock height={11} width="70%" />
-          </View>
-        ))}
-      </View>
-      <View style={[s.progressCard, { gap: 8 }]}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <SkeletonBlock height={12} width={120} />
-          <SkeletonBlock height={12} width={36} />
-        </View>
-        <SkeletonBlock height={6} width="100%" />
-        <SkeletonBlock height={11} width={160} />
-      </View>
-    </View>
-  );
-}
-
-// ── Activity badge ───────────────────────────────────────────────────────────
-type ActivityBadgeProps = {
+function ActivityBadge({
+  icon,
+  label,
+  color,
+  bg,
+}: {
   icon: any;
   label: string;
   color: string;
   bg: string;
-};
-function ActivityBadge({ icon, label, color, bg }: ActivityBadgeProps) {
+}) {
   return (
     <View style={[s.activityBadge, { backgroundColor: bg }]}>
       <Ionicons name={icon} size={10} color={color} />
@@ -89,7 +72,6 @@ export default function PertemuanList() {
     nama_mk: string;
     nama_kelas: string;
   }>();
-
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<any[]>([]);
   const [error, setError] = useState(false);
@@ -104,7 +86,9 @@ export default function PertemuanList() {
     try {
       const res = await API.get(
         `/v2/lms/kelas_kuliah/${params.id_kelas}/pertemuan`,
-        { params: { ignore_default_pagination: true } },
+        {
+          params: { ignore_default_pagination: true },
+        },
       );
       setList(res.data?.data || []);
     } catch {
@@ -114,14 +98,12 @@ export default function PertemuanList() {
     }
   };
 
-  // ── Derived stats ───────────────────────────────────────────────────────
   const selesai = list.filter((p) => p.status === "selesai").length;
   const berlangsung = list.filter((p) => p.status === "berlangsung").length;
   const tersisa = list.length - selesai - berlangsung;
   const progressPct =
     list.length > 0 ? Math.round((selesai / list.length) * 100) : 0;
 
-  // ── Status helpers ──────────────────────────────────────────────────────
   const getStatusColor = (status?: string) => {
     if (status === "selesai") return Colors.successText;
     if (status === "berlangsung") return Colors.primary;
@@ -146,21 +128,16 @@ export default function PertemuanList() {
 
   return (
     <SafeAreaView style={g.safeArea}>
-      {/* ── HEADER ─────────────────────────────────────────────────────── */}
-      <View style={s.header}>
-        <View style={s.decor1} />
-        <View style={s.decor2} />
-        <View style={s.decor3} />
-        <View style={s.decor4} />
-
-        <View style={s.headerTop}>
+      {/* HEADER */}
+      <View style={g.header}>
+        <View style={g.headerTop}>
           <TouchableOpacity
-            style={s.backBtn}
+            style={g.backBtn}
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
             <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={s.backLabel}>Kembali</Text>
+            <Text style={g.backLabel}>Kembali</Text>
           </TouchableOpacity>
           {!loading && !error && list.length > 0 && (
             <View style={s.countBadge}>
@@ -168,20 +145,38 @@ export default function PertemuanList() {
             </View>
           )}
         </View>
-
-        <Text style={s.headerTitle} numberOfLines={2}>
+        <Text style={g.headerTitle} numberOfLines={2}>
           {params.nama_mk || "Pertemuan"}
         </Text>
-        <Text style={s.headerSub}>
+        <Text style={g.headerSub}>
           {params.nama_kelas
             ? `${params.nama_kelas} · Daftar Pertemuan`
             : "Daftar Pertemuan"}
         </Text>
       </View>
 
-      {/* ── SUMMARY STRIP ──────────────────────────────────────────────── */}
+      {/* SUMMARY */}
       {loading ? (
-        <SummarySkeleton />
+        <View style={s.summaryOuter}>
+          <View style={s.summaryStrip}>
+            {[1, 2, 3].map((i) => (
+              <View key={i} style={[g.summaryCard, { flex: 1, gap: 6 }]}>
+                <SkeletonBlock height={22} width="50%" />
+                <SkeletonBlock height={11} width="70%" />
+              </View>
+            ))}
+          </View>
+          <View style={[g.card, { padding: 12, gap: 6 }]}>
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-between" }}
+            >
+              <SkeletonBlock height={12} width={120} />
+              <SkeletonBlock height={12} width={36} />
+            </View>
+            <SkeletonBlock height={6} width="100%" />
+            <SkeletonBlock height={11} width={160} />
+          </View>
+        </View>
       ) : !error && list.length > 0 ? (
         <View style={s.summaryOuter}>
           <View style={s.summaryStrip}>
@@ -204,18 +199,16 @@ export default function PertemuanList() {
               <Text style={g.summaryLabel}>Tersisa</Text>
             </View>
           </View>
-
-          {/* Progress bar */}
           <View style={s.progressCard}>
             <View style={s.progressHeader}>
               <Text style={s.progressLabel}>Progress Pertemuan</Text>
               <Text style={s.progressPct}>{progressPct}%</Text>
             </View>
-            <View style={s.progressBg}>
+            <View style={g.progressWrap}>
               <View
                 style={[
-                  s.progressFill,
-                  { width: `${progressPct}%` },
+                  g.progressFill,
+                  { width: `${progressPct}%` as any },
                   progressPct === 100 && {
                     backgroundColor: Colors.successText,
                   },
@@ -229,14 +222,13 @@ export default function PertemuanList() {
         </View>
       ) : null}
 
-      {/* ── CONTENT ────────────────────────────────────────────────────── */}
+      {/* CONTENT */}
       {loading ? (
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* legend skeleton */}
           <View
             style={{
               flexDirection: "row",
@@ -254,26 +246,24 @@ export default function PertemuanList() {
           ))}
         </ScrollView>
       ) : error ? (
-        <View style={s.empty}>
+        <View style={g.empty}>
           <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-          <Text style={s.emptyText}>Gagal memuat data</Text>
-          <Text style={{ fontSize: 12, color: Colors.hint }}>
-            Periksa koneksi internet kamu
-          </Text>
+          <Text style={g.emptyTitle}>Gagal memuat data</Text>
+          <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
           <TouchableOpacity
-            style={s.retryBtn}
+            style={g.retryBtn}
             onPress={fetchPertemuan}
             activeOpacity={0.75}
           >
             <Ionicons name="refresh-outline" size={15} color={Colors.primary} />
-            <Text style={s.retryText}>Coba Lagi</Text>
+            <Text style={g.retryText}>Coba Lagi</Text>
           </TouchableOpacity>
         </View>
       ) : list.length === 0 ? (
-        <View style={s.empty}>
+        <View style={g.empty}>
           <Ionicons name="document-outline" size={40} color={Colors.border} />
-          <Text style={s.emptyText}>Belum Ada Pertemuan</Text>
-          <Text style={{ fontSize: 12, color: Colors.hint }}>
+          <Text style={g.emptyTitle}>Belum Ada Pertemuan</Text>
+          <Text style={g.emptyHint}>
             Pertemuan untuk kelas ini belum tersedia
           </Text>
         </View>
@@ -283,7 +273,7 @@ export default function PertemuanList() {
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── LEGEND ── */}
+          {/* LEGEND */}
           <View style={s.legend}>
             {[
               { color: Colors.successText, label: "Selesai" },
@@ -297,23 +287,29 @@ export default function PertemuanList() {
             ))}
           </View>
 
-          {/* ── LIST ── */}
+          {/* LIST */}
           {list.map((p, i) => {
             const idP = p.id || p.id_pertemuan;
             const status = p.status || "";
             const numStyle = getNumStyle(status);
             const isLive = status === "berlangsung";
             const isDone = status === "selesai";
-
-            const hasTugas = p.count_activity?.tugas > 0;
-            const hasMateri = p.count_activity?.materi > 0;
-            const hasKuis = p.count_activity?.kuis > 0;
-            const hasForum = p.count_activity?.forum > 0;
+            const act = p.count_activity || {};
 
             return (
               <TouchableOpacity
                 key={idP ?? i}
-                style={[s.item, isLive && s.itemActive, isDone && s.itemDone]}
+                style={[
+                  g.card,
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: 12,
+                  },
+                  isLive && s.itemActive,
+                  isDone && s.itemDone,
+                ]}
                 activeOpacity={0.75}
                 onPress={() =>
                   router.push({
@@ -327,7 +323,6 @@ export default function PertemuanList() {
                   })
                 }
               >
-                {/* Number circle */}
                 <View
                   style={[
                     s.numCircle,
@@ -350,63 +345,61 @@ export default function PertemuanList() {
                   )}
                 </View>
 
-                {/* Body */}
                 <View style={s.itemBody}>
                   <View style={s.titleRow}>
                     <Text style={s.itemTitle} numberOfLines={2}>
                       {p.judul || `Pertemuan ${p.nomor || i + 1}`}
                     </Text>
                     {isLive && (
-                      <View style={s.liveBadge}>
+                      <View style={[g.badgeDanger, { borderRadius: 6 }]}>
                         <View style={s.liveDot} />
                         <Text style={s.liveText}>Live</Text>
                       </View>
                     )}
                   </View>
 
-                  {/* Date */}
                   <View style={g.infoRow}>
                     <Ionicons
                       name="calendar-outline"
                       size={11}
                       color={Colors.hint}
                     />
-                    <Text style={s.itemMetaText} numberOfLines={1}>
-                      {fmtDate(p.waktu_mulai)}
-                    </Text>
+                    <Text style={s.itemMetaText}>{fmtDate(p.waktu_mulai)}</Text>
                   </View>
 
-                  {/* Activity badges */}
-                  {(hasMateri || hasTugas || hasKuis || hasForum) && (
+                  {(act.materi > 0 ||
+                    act.tugas > 0 ||
+                    act.kuis > 0 ||
+                    act.forum > 0) && (
                     <View style={s.activityRow}>
-                      {hasMateri && (
+                      {act.materi > 0 && (
                         <ActivityBadge
                           icon="document-text-outline"
-                          label={`${p.count_activity.materi} Materi`}
+                          label={`${act.materi} Materi`}
                           color={Colors.primary}
                           bg={Colors.primaryLight}
                         />
                       )}
-                      {hasTugas && (
+                      {act.tugas > 0 && (
                         <ActivityBadge
                           icon="clipboard-outline"
-                          label={`${p.count_activity.tugas} Tugas`}
+                          label={`${act.tugas} Tugas`}
                           color="#F97316"
                           bg="#FFF7ED"
                         />
                       )}
-                      {hasKuis && (
+                      {act.kuis > 0 && (
                         <ActivityBadge
                           icon="help-circle-outline"
-                          label={`${p.count_activity.kuis} Kuis`}
+                          label={`${act.kuis} Kuis`}
                           color="#8B5CF6"
                           bg="#F5F3FF"
                         />
                       )}
-                      {hasForum && (
+                      {act.forum > 0 && (
                         <ActivityBadge
                           icon="chatbubbles-outline"
-                          label={`${p.count_activity.forum} Forum`}
+                          label={`${act.forum} Forum`}
                           color="#0EA5E9"
                           bg="#F0F9FF"
                         />
@@ -415,7 +408,6 @@ export default function PertemuanList() {
                   )}
                 </View>
 
-                {/* Right col */}
                 <View style={s.rightCol}>
                   <View
                     style={[
@@ -439,65 +431,6 @@ export default function PertemuanList() {
 }
 
 const s = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 52,
-    overflow: "hidden",
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
   countBadge: {
     backgroundColor: "rgba(255,255,255,0.15)",
     borderRadius: 12,
@@ -509,23 +442,13 @@ const s = StyleSheet.create({
     fontWeight: "700",
     color: "rgba(255,255,255,0.9)",
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-    lineHeight: 28,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 2 },
 
-  // ── Summary ──────────────────────────────────────────────────────────────
   summaryOuter: { paddingHorizontal: 16, marginTop: -22, gap: 8 },
   summaryStrip: { flexDirection: "row", gap: 8 },
-
   progressCard: {
     backgroundColor: Colors.card,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.1,
     borderColor: Colors.border,
     padding: 12,
     gap: 6,
@@ -537,43 +460,9 @@ const s = StyleSheet.create({
   },
   progressLabel: { fontSize: 12, color: Colors.muted, fontWeight: "500" },
   progressPct: { fontSize: 13, fontWeight: "700", color: Colors.primary },
-  progressBg: {
-    height: 6,
-    backgroundColor: Colors.border,
-    borderRadius: 99,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: 6,
-    backgroundColor: Colors.primary,
-    borderRadius: 99,
-  },
   progressSub: { fontSize: 11, color: Colors.hint },
 
-  // ── Empty / Error ────────────────────────────────────────────────────────
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
-
-  // ── List ─────────────────────────────────────────────────────────────────
-  listContent: { padding: 16, paddingTop: 16, paddingBottom: 40, gap: 8 },
+  listContent: { padding: 16, paddingBottom: 40, gap: 8 },
   legend: {
     flexDirection: "row",
     gap: 16,
@@ -584,16 +473,6 @@ const s = StyleSheet.create({
   legendDot: { width: 7, height: 7, borderRadius: 4 },
   legendText: { fontSize: 11, color: Colors.muted },
 
-  item: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-  },
   itemActive: {
     borderColor: Colors.primary + "60",
     backgroundColor: Colors.primaryLight,
@@ -602,11 +481,12 @@ const s = StyleSheet.create({
     borderColor: Colors.successBorder,
     backgroundColor: Colors.successBg,
   },
+
   numCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    borderWidth: 1,
+    borderWidth: 0.1,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
@@ -617,17 +497,6 @@ const s = StyleSheet.create({
   titleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   itemTitle: { flex: 1, fontSize: 13, fontWeight: "600", color: Colors.text },
 
-  liveBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
   liveDot: {
     width: 5,
     height: 5,
@@ -637,7 +506,6 @@ const s = StyleSheet.create({
   liveText: { fontSize: 10, fontWeight: "700", color: Colors.dangerText },
 
   itemMetaText: { fontSize: 11, color: Colors.muted },
-
   activityRow: { flexDirection: "row", gap: 5, marginTop: 2, flexWrap: "wrap" },
   activityBadge: {
     flexDirection: "row",
@@ -652,17 +520,6 @@ const s = StyleSheet.create({
   rightCol: { alignItems: "center", gap: 6 },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
 
-  // ── Skeleton ─────────────────────────────────────────────────────────────
-  skeletonItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-  },
   skeletonCircle: {
     width: 36,
     height: 36,

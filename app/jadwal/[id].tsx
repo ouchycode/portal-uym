@@ -116,7 +116,9 @@ function DetailSkeleton() {
   return (
     <View style={{ paddingHorizontal: 14, paddingTop: 20, gap: 14 }}>
       {/* info card skeleton */}
-      <View style={[s.infoCard, { gap: 12 }]}>
+      <View
+        style={[g.card, { margin: 14, marginTop: 20, padding: 14, gap: 10 }]}
+      >
         {[70, 55, 45, 60].map((w, i) => (
           <View
             key={i}
@@ -139,7 +141,18 @@ function DetailSkeleton() {
       </View>
       {/* content skeletons */}
       {[1, 2, 3].map((i) => (
-        <View key={i} style={s.skeletonCard}>
+        <View
+          key={i}
+          style={[
+            g.card,
+            {
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              padding: 12,
+            },
+          ]}
+        >
           <View style={s.skeletonExt} />
           <View style={{ flex: 1, gap: 7 }}>
             <SkeletonBlock height={13} width="65%" />
@@ -157,7 +170,18 @@ function TabContentSkeleton({ tab }: { tab: string }) {
     return (
       <View style={{ gap: 8 }}>
         {[1, 2].map((i) => (
-          <View key={i} style={s.skeletonCard}>
+          <View
+            key={i}
+            style={[
+              g.card,
+              {
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+                padding: 12,
+              },
+            ]}
+          >
             <View style={s.skeletonExt} />
             <View style={{ flex: 1, gap: 7 }}>
               <SkeletonBlock height={13} width="65%" />
@@ -175,8 +199,13 @@ function TabContentSkeleton({ tab }: { tab: string }) {
         <View
           key={i}
           style={[
-            s.skeletonCard,
-            { flexDirection: "column", alignItems: "flex-start" },
+            g.card,
+            {
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              padding: 12,
+            },
           ]}
         >
           <SkeletonBlock height={13} width="70%" />
@@ -215,7 +244,10 @@ function MateriItem({ item }: { item: any }) {
 
   return (
     <TouchableOpacity
-      style={s.materiCard}
+      style={[
+        g.card,
+        { flexDirection: "row", alignItems: "center", gap: 10, padding: 12 },
+      ]}
       activeOpacity={0.75}
       onPress={handleOpen}
       disabled={!url}
@@ -301,7 +333,7 @@ function TugasItem({ item }: { item: any }) {
           </Text>
         ) : null}
         {deadline ? (
-          <View style={s.deadlineRow}>
+          <View style={g.infoRow}>
             <Ionicons
               name="alarm-outline"
               size={12}
@@ -313,16 +345,16 @@ function TugasItem({ item }: { item: any }) {
               Deadline: {deadline}
             </Text>
             {isLate && (
-              <View style={s.lateBadge}>
-                <Text style={s.lateBadgeText}>Terlambat</Text>
+              <View style={g.badgeDanger}>
+                <Text style={g.badgeDangerText}>Terlambat</Text>
               </View>
             )}
           </View>
         ) : null}
         <View
           style={[
-            s.tugasStatusBadge,
-            sudah ? s.badgeSuccessSmall : s.badgeWarningSmall,
+            sudah ? g.badgeSuccess : g.badgeWarning,
+            { alignSelf: "flex-start" },
           ]}
         >
           <Ionicons
@@ -330,12 +362,7 @@ function TugasItem({ item }: { item: any }) {
             size={11}
             color={sudah ? Colors.successText : Colors.warningText}
           />
-          <Text
-            style={[
-              s.tugasStatusText,
-              { color: sudah ? Colors.successText : Colors.warningText },
-            ]}
-          >
+          <Text style={sudah ? g.badgeSuccessText : g.badgeWarningText}>
             {sudah ? "Sudah dikumpulkan" : "Belum dikumpulkan"}
           </Text>
         </View>
@@ -346,7 +373,7 @@ function TugasItem({ item }: { item: any }) {
 
 function ForumItem({ item }: { item: any }) {
   return (
-    <View style={s.forumCard}>
+    <View style={[g.card, { padding: 12, gap: 8 }]}>
       <View style={s.forumHeader}>
         <View style={s.forumIconWrap}>
           <Ionicons name="chatbubbles-outline" size={15} color="#0EA5E9" />
@@ -375,11 +402,11 @@ function ForumItem({ item }: { item: any }) {
         )}
         {item.url ? (
           <TouchableOpacity
-            style={s.linkBtn}
+            style={g.retryBtn}
             onPress={() => Linking.openURL(item.url)}
           >
             <Ionicons name="open-outline" size={13} color={Colors.primary} />
-            <Text style={s.linkText}>Buka Forum</Text>
+            <Text style={g.retryText}>Buka Forum</Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -389,7 +416,7 @@ function ForumItem({ item }: { item: any }) {
 
 function TeksItem({ item }: { item: any }) {
   return (
-    <View style={s.teksCard}>
+    <View style={[g.card, { padding: 12, gap: 6 }]}>
       <Text style={s.teksTitle}>{item.judul || "—"}</Text>
       {item.deskripsi ? (
         <Text style={s.teksBody} numberOfLines={6}>
@@ -422,11 +449,11 @@ function VidconItem({ item }: { item: any }) {
       ) : null}
       {item.url ? (
         <TouchableOpacity
-          style={[s.linkBtn, { backgroundColor: "#F5F3FF" }]}
+          style={[g.retryBtn, { backgroundColor: "#F5F3FF" }]}
           onPress={() => Linking.openURL(item.url)}
         >
           <Ionicons name="videocam-outline" size={13} color="#8B5CF6" />
-          <Text style={[s.linkText, { color: "#8B5CF6" }]}>Bergabung</Text>
+          <Text style={[g.retryText, { color: "#8B5CF6" }]}>Bergabung</Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -436,7 +463,7 @@ function VidconItem({ item }: { item: any }) {
 function GenericItem({ item }: { item: any }) {
   const deadline = fmtDate(item.deadline);
   return (
-    <View style={s.genericCard}>
+    <View style={[g.card, { padding: 12, gap: 6 }]}>
       <Text style={s.genericTitle}>
         {item.judul || item.nama || item.topik || "—"}
       </Text>
@@ -446,7 +473,7 @@ function GenericItem({ item }: { item: any }) {
         </Text>
       ) : null}
       {deadline ? (
-        <View style={s.deadlineRow}>
+        <View style={g.infoRow}>
           <Ionicons name="alarm-outline" size={12} color={Colors.dangerText} />
           <Text style={[s.deadlineText, { color: Colors.dangerText }]}>
             Deadline: {deadline}
@@ -455,11 +482,11 @@ function GenericItem({ item }: { item: any }) {
       ) : null}
       {item.url ? (
         <TouchableOpacity
-          style={s.linkBtn}
+          style={g.retryBtn}
           onPress={() => Linking.openURL(item.url)}
         >
           <Ionicons name="open-outline" size={13} color={Colors.primary} />
-          <Text style={s.linkText}>Buka Link</Text>
+          <Text style={g.retryText}>Buka Link</Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -561,16 +588,14 @@ export default function PertemuanDetail() {
     const items = contents[activeTab] || [];
     if (items.length === 0) {
       return (
-        <View style={s.emptyTab}>
+        <View style={g.emptyWrap}>
           <Ionicons
             name={JENIS_ICON[activeTab]}
             size={40}
             color={Colors.border}
           />
-          <Text style={s.emptyTabTitle}>
-            Tidak ada {JENIS_LABEL[activeTab]}
-          </Text>
-          <Text style={s.emptyTabSub}>
+          <Text style={g.emptyTitle}>Tidak ada {JENIS_LABEL[activeTab]}</Text>
+          <Text style={g.emptyHint}>
             Konten belum tersedia untuk pertemuan ini
           </Text>
         </View>
@@ -586,20 +611,15 @@ export default function PertemuanDetail() {
     <SafeAreaView style={g.safeArea}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* ── HEADER ── */}
-        <View style={s.header}>
-          <View style={s.decor1} />
-          <View style={s.decor2} />
-          <View style={s.decor3} />
-          <View style={s.decor4} />
-
-          <View style={s.headerTop}>
+        <View style={g.header}>
+          <View style={g.headerTop}>
             <TouchableOpacity
-              style={s.backBtn}
+              style={g.backBtn}
               onPress={() => router.back()}
               activeOpacity={0.7}
             >
               <Ionicons name="chevron-back" size={18} color="#fff" />
-              <Text style={s.backLabel}>Kembali</Text>
+              <Text style={g.backLabel}>Kembali</Text>
             </TouchableOpacity>
 
             {!loading && !error && detail && (
@@ -620,10 +640,10 @@ export default function PertemuanDetail() {
             )}
           </View>
 
-          <Text style={s.headerTitle}>
+          <Text style={g.headerTitle}>
             {detail ? `Pertemuan ${detail.nomor}` : "Detail Pertemuan"}
           </Text>
-          <Text style={s.headerSub} numberOfLines={1}>
+          <Text style={g.headerSub} numberOfLines={1}>
             {params.nama_mk}
             {params.nama_kelas ? ` · ${params.nama_kelas}` : ""}
           </Text>
@@ -708,14 +728,14 @@ export default function PertemuanDetail() {
         {loading ? (
           <DetailSkeleton />
         ) : error ? (
-          <View style={s.empty}>
+          <View style={g.empty}>
             <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-            <Text style={s.emptyText}>Gagal memuat data</Text>
+            <Text style={g.emptyHint}>Gagal memuat data</Text>
             <Text style={{ fontSize: 12, color: Colors.hint }}>
               Periksa koneksi internet kamu
             </Text>
             <TouchableOpacity
-              style={s.retryBtn}
+              style={g.retryBtn}
               onPress={fetchAll}
               activeOpacity={0.75}
             >
@@ -724,13 +744,18 @@ export default function PertemuanDetail() {
                 size={15}
                 color={Colors.primary}
               />
-              <Text style={s.retryText}>Coba Lagi</Text>
+              <Text style={g.retryText}>Coba Lagi</Text>
             </TouchableOpacity>
           </View>
         ) : detail ? (
           <>
             {/* INFO CARD */}
-            <View style={s.infoCard}>
+            <View
+              style={[
+                g.card,
+                { margin: 14, marginTop: 20, padding: 14, gap: 10 },
+              ]}
+            >
               <InfoRow
                 icon="time-outline"
                 label="Waktu"
@@ -749,7 +774,7 @@ export default function PertemuanDetail() {
                   size={14}
                   color={Colors.hint}
                 />
-                <Text style={s.infoLabel}>Status</Text>
+                <Text style={g.infoLabel}>Status</Text>
                 <StatusBadge status={detail.status} />
               </View>
               {detail.jenis ? (
@@ -763,8 +788,8 @@ export default function PertemuanDetail() {
                     size={14}
                     color={Colors.hint}
                   />
-                  <Text style={s.infoLabel}>Mode</Text>
-                  <Text style={s.infoValue}>
+                  <Text style={g.infoLabel}>Mode</Text>
+                  <Text style={g.infoValue}>
                     {detail.jenis === "online" ? "Online" : "Offline"}
                   </Text>
                 </View>
@@ -813,8 +838,20 @@ export default function PertemuanDetail() {
                       {JENIS_LABEL[t]}
                     </Text>
                     {count > 0 && (
-                      <View style={s.tabBadge}>
-                        <Text style={s.tabBadgeText}>{count}</Text>
+                      <View
+                        style={[
+                          s.tabBadge,
+                          { backgroundColor: active ? "#fff" : Colors.primary },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            s.tabBadgeText,
+                            { color: active ? Colors.primary : "#fff" },
+                          ]}
+                        >
+                          {count}
+                        </Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -846,8 +883,8 @@ function InfoRow({
   return (
     <View style={g.infoRow}>
       <Ionicons name={icon} size={14} color={Colors.hint} />
-      <Text style={s.infoLabel}>{label}</Text>
-      <Text style={s.infoValue}>{value}</Text>
+      <Text style={g.infoLabel}>{label}</Text>
+      <Text style={g.infoValue}>{value}</Text>
     </View>
   );
 }
@@ -855,8 +892,10 @@ function InfoRow({
 function StatusBadge({ status }: { status?: string }) {
   const c = STATUS_MAP[status || ""] || STATUS_MAP.belum;
   return (
-    <View style={[s.badge, { backgroundColor: c.bg, borderColor: c.border }]}>
-      <Text style={[s.badgeText, { color: c.text }]}>{c.label}</Text>
+    <View
+      style={[g.badgePrimary, { backgroundColor: c.bg, borderColor: c.border }]}
+    >
+      <Text style={[g.badgePrimaryText, { color: c.text }]}>{c.label}</Text>
     </View>
   );
 }
@@ -865,72 +904,11 @@ function StatusBadge({ status }: { status?: string }) {
 // Styles
 // ─────────────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 52,
-    overflow: "hidden",
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-
   headerBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -944,16 +922,8 @@ const s = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: Colors.primary,
+    backgroundColor: "#22C55E",
   },
-
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 2 },
 
   summaryStrip: {
     flexDirection: "row",
@@ -961,27 +931,6 @@ const s = StyleSheet.create({
     marginTop: -22,
     gap: 8,
   },
-
-  infoCard: {
-    margin: 14,
-    marginTop: 20,
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14,
-    gap: 10,
-  },
-  infoLabel: { fontSize: 12, color: Colors.muted, width: 72 },
-  infoValue: { fontSize: 13, color: Colors.text, fontWeight: "500", flex: 1 },
-
-  badge: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderWidth: 1,
-  },
-  badgeText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
 
   judulBox: {
     marginTop: 4,
@@ -1015,53 +964,12 @@ const s = StyleSheet.create({
 
   contentArea: { margin: 14, marginTop: 10, paddingBottom: 40 },
 
-  // ── Empty / Error ──────────────────────────────────────────────────────────
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
-
-  emptyTab: { alignItems: "center", paddingVertical: 48, gap: 8 },
-  emptyTabTitle: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  emptyTabSub: { fontSize: 12, color: Colors.hint, textAlign: "center" },
-
-  // Materi
-  materiCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-  },
+  // Mate
   extBadge: {
     width: 44,
     height: 44,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0.5,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
@@ -1077,7 +985,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: Colors.card,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     overflow: "hidden",
   },
@@ -1098,44 +1006,7 @@ const s = StyleSheet.create({
     flex: 1,
     lineHeight: 18,
   },
-  tugasStatusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  tugasStatusText: { fontSize: 10, fontWeight: "600" },
-  badgeSuccessSmall: {
-    backgroundColor: Colors.successBg,
-    borderColor: Colors.successBorder,
-  },
-  badgeWarningSmall: {
-    backgroundColor: Colors.warningBg,
-    borderColor: Colors.warningBorder,
-  },
-  lateBadge: {
-    backgroundColor: Colors.dangerBg,
-    borderWidth: 1,
-    borderColor: Colors.dangerBorder,
-    borderRadius: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
-  lateBadgeText: { fontSize: 9, fontWeight: "700", color: Colors.dangerText },
 
-  // Forum
-  forumCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-    gap: 8,
-  },
   forumHeader: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
   forumIconWrap: {
     width: 30,
@@ -1156,15 +1027,6 @@ const s = StyleSheet.create({
   forumMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
   forumMetaText: { fontSize: 11, color: Colors.hint },
 
-  // Teks
-  teksCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-    gap: 6,
-  },
   teksTitle: { fontSize: 13, fontWeight: "600", color: Colors.text },
   teksBody: { fontSize: 12, color: Colors.muted, lineHeight: 19 },
 
@@ -1172,7 +1034,7 @@ const s = StyleSheet.create({
   vidconCard: {
     backgroundColor: Colors.card,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: "#E9D5FF",
     padding: 12,
     gap: 8,
@@ -1200,14 +1062,13 @@ const s = StyleSheet.create({
   genericCard: {
     backgroundColor: Colors.card,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     padding: 12,
     gap: 6,
   },
   genericTitle: { fontSize: 13, fontWeight: "600", color: Colors.text },
   genericDesc: { fontSize: 12, color: Colors.muted, lineHeight: 17 },
-  deadlineRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   deadlineText: { fontSize: 11, color: Colors.muted, fontWeight: "500" },
   linkBtn: {
     flexDirection: "row",
@@ -1221,17 +1082,6 @@ const s = StyleSheet.create({
   },
   linkText: { fontSize: 12, color: Colors.primary, fontWeight: "600" },
 
-  // Skeleton
-  skeletonCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-  },
   skeletonExt: {
     width: 44,
     height: 44,

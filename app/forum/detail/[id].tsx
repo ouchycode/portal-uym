@@ -256,7 +256,7 @@ const MessageBubble = ({
               borderRadius: 4,
               paddingHorizontal: 5,
               paddingVertical: 1,
-              borderWidth: 1,
+              borderWidth: 0.5,
               borderColor: "#f0a500",
             }}
           >
@@ -666,13 +666,13 @@ const ThreadModal = ({
                 <BubbleSkeleton align="right" />
               </>
             ) : thread.chats.length === 0 ? (
-              <View style={styles.empty}>
+              <View style={g.empty}>
                 <Ionicons
                   name="chatbubbles-outline"
                   size={36}
                   color={Colors.border}
                 />
-                <Text style={styles.emptyText}>Belum ada balasan</Text>
+                <Text style={g.emptyTitle}>Belum ada balasan</Text>
               </View>
             ) : (
               thread.chats.map((m, i) => {
@@ -833,6 +833,7 @@ export default function ForumDetail() {
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [activeThread, setActiveThread] = useState<ActiveThread | null>(null);
   const [threadModalVisible, setThreadModalVisible] = useState(false);
+  const [soalExpanded, setSoalExpanded] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -1304,52 +1305,68 @@ export default function ForumDetail() {
   return (
     <SafeAreaView style={g.safeArea}>
       {/* HEADER */}
-      <View style={styles.header}>
-        <View style={styles.decor1} />
-        <View style={styles.decor2} />
-        <View style={styles.headerRow}>
+      <View style={g.header}>
+        <View style={g.headerTop}>
           <TouchableOpacity
-            style={styles.backBtn}
+            style={g.backBtn}
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
             <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={styles.backLabel}>Kembali</Text>
+            <Text style={g.backLabel}>Kembali</Text>
           </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {loading ? "Memuat..." : forum?.judul || "Forum"}
-            </Text>
-            <Text style={styles.headerSub}>
-              {error
-                ? "Gagal memuat data"
-                : messages.length > 0
-                  ? `${messages.length} pesan`
-                  : "Forum Diskusi"}
-            </Text>
-          </View>
         </View>
+        <Text style={g.headerTitle} numberOfLines={1}>
+          {loading ? "Memuat..." : forum?.judul || "Forum"}
+        </Text>
+        <Text style={g.headerSub}>
+          {error
+            ? "Gagal memuat data"
+            : messages.length > 0
+              ? `${messages.length} pesan`
+              : "Forum Diskusi"}
+        </Text>
       </View>
 
       {/* SOAL DISKUSI */}
       {forum?.deskripsi ? (
-        <View style={styles.soalBox}>
-          <View style={styles.soalLabelRow}>
-            <Ionicons
-              name="document-text-outline"
-              size={12}
-              color={Colors.primary}
-            />
-            <Text style={styles.soalLabel}>Soal Diskusi</Text>
+        <TouchableOpacity
+          style={[g.infoBox, { margin: 12 }]}
+          onPress={() => setSoalExpanded((v) => !v)}
+          activeOpacity={0.8}
+        >
+          <View style={{ flex: 1 }}>
+            <View style={styles.soalLabelRow}>
+              <Ionicons
+                name="document-text-outline"
+                size={12}
+                color={Colors.primary}
+              />
+              <Text style={styles.soalLabel}>Soal Diskusi</Text>
+            </View>
+            <Text
+              style={styles.soalText}
+              numberOfLines={soalExpanded ? undefined : 2}
+            >
+              {stripHtml(forum.deskripsi)}
+            </Text>
           </View>
-          <Text style={styles.soalText}>{stripHtml(forum.deskripsi)}</Text>
-        </View>
+          <Ionicons
+            name={soalExpanded ? "chevron-up" : "chevron-down"}
+            size={14}
+            color={Colors.primary}
+          />
+        </TouchableOpacity>
       ) : null}
 
       {/* REMINDER BOX */}
       {!loading && forum?.minimal_post > 0 && (
         <View
-          style={[styles.reminderBox, sudahCukup && styles.reminderBoxDone]}
+          style={[
+            g.warningBox,
+            { marginHorizontal: 12, marginBottom: 4 },
+            sudahCukup && styles.reminderBoxDone,
+          ]}
         >
           <Ionicons
             name={
@@ -1361,7 +1378,7 @@ export default function ForumDetail() {
             color={sudahCukup ? "#27ae60" : "#e67e22"}
           />
           <Text
-            style={[styles.reminderText, sudahCukup && styles.reminderTextDone]}
+            style={[g.warningBoxText, sudahCukup && styles.reminderTextDone]}
           >
             {sudahCukup
               ? `Kamu sudah mengirim ${myPostCount} pesan · syarat terpenuhi ✓`
@@ -1399,32 +1416,28 @@ export default function ForumDetail() {
               <BubbleSkeleton align="left" />
             </>
           ) : error ? (
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat forum</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={getData}>
+              <Text style={g.emptyTitle}>Gagal memuat forum</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
+              <TouchableOpacity style={g.retryBtn} onPress={getData}>
                 <Ionicons
                   name="refresh-outline"
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           ) : messages.length === 0 ? (
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons
                 name="chatbubbles-outline"
                 size={40}
                 color={Colors.border}
               />
-              <Text style={styles.emptyText}>Belum ada diskusi</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Jadilah yang pertama memulai
-              </Text>
+              <Text style={g.emptyTitle}>Belum ada diskusi</Text>
+              <Text style={g.emptyHint}>Jadilah yang pertama memulai</Text>
             </View>
           ) : (
             groupedMessages.map((item, i) => {
@@ -1650,54 +1663,6 @@ export default function ForumDetail() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-    overflow: "hidden",
-  },
-  decor1: {
-    position: "absolute",
-    top: -20,
-    right: -20,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -30,
-    left: -16,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "rgba(255,255,255,0.05)",
-  },
-  headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: { fontSize: 15, fontWeight: "700", color: "#fff" },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 1 },
-
-  soalBox: {
-    backgroundColor: Colors.primaryLight,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    margin: 12,
-    borderRadius: 8,
-  },
   soalLabelRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1713,25 +1678,6 @@ const styles = StyleSheet.create({
   },
   soalText: { fontSize: 13, color: Colors.text, lineHeight: 20 },
 
-  reminderBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: "#fef6ec",
-    borderLeftWidth: 3,
-    borderLeftColor: "#e67e22",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginHorizontal: 12,
-    marginBottom: 4,
-  },
-  reminderText: {
-    flex: 1,
-    fontSize: 12,
-    color: "#b85c00",
-    lineHeight: 18,
-  },
   reminderBoxDone: {
     backgroundColor: "#eafaf1",
     borderLeftColor: "#27ae60",
@@ -1770,7 +1716,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
   },
   myBubble: {
     backgroundColor: Colors.primary,
@@ -1806,7 +1752,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 10,
     backgroundColor: Colors.card,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   actionBtnDelete: { borderColor: "#fcd4d4", backgroundColor: "#fff5f5" },
@@ -1823,7 +1769,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     borderRadius: 10,
     backgroundColor: Colors.card,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     alignSelf: "flex-start",
   },
@@ -1850,7 +1796,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   threadHeaderTitle: { fontSize: 15, fontWeight: "700", color: Colors.text },
@@ -1966,7 +1912,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 8,
     marginBottom: 6,
-    borderWidth: 1,
+    borderWidth: 0.5,
   },
   attachmentFileMe: {
     backgroundColor: "rgba(255,255,255,0.15)",
@@ -1984,31 +1930,10 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
     maxWidth: "60%",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     gap: 6,
   },
-
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 
   inputBar: {
     flexDirection: "row",
@@ -2029,7 +1954,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     backgroundColor: Colors.bg,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     borderRadius: 20,
     paddingHorizontal: 14,

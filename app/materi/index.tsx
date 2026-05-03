@@ -141,22 +141,19 @@ export default function Materi() {
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <View style={styles.decor4} />
-
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={styles.backLabel}>Kembali</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Materi Kuliah</Text>
-          <Text style={styles.headerSub}>{periodeLabel}</Text>
+        <View style={g.header}>
+          <View style={g.headerTop}>
+            <TouchableOpacity
+              style={g.backBtn}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Text style={g.backLabel}>Kembali</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={g.headerTitle}>Materi Kuliah</Text>
+          <Text style={g.headerSub}>{periodeLabel}</Text>
         </View>
 
         {/* FILTER PERIODE */}
@@ -194,8 +191,8 @@ export default function Materi() {
         </ScrollView>
 
         {/* BODY */}
-        <View style={styles.body}>
-          <Text style={styles.sectionLabel}>
+        <View style={g.body}>
+          <Text style={g.sectionLabel}>
             {loading
               ? "Memuat kelas..."
               : error
@@ -208,7 +205,19 @@ export default function Materi() {
           {/* SKELETON */}
           {loading ? (
             [1, 2, 3, 4].map((i) => (
-              <View key={i} style={styles.skeletonCard}>
+              <View
+                key={i}
+                style={[
+                  g.card,
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: 14,
+                    marginBottom: 8,
+                  },
+                ]}
+              >
                 <View style={styles.skeletonLeft} />
                 <View style={{ flex: 1, gap: 8 }}>
                   <SkeletonBlock width="65%" height={13} />
@@ -217,14 +226,12 @@ export default function Materi() {
               </View>
             ))
           ) : error ? (
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
               <TouchableOpacity
-                style={styles.retryBtn}
+                style={g.retryBtn}
                 onPress={getKelas}
                 activeOpacity={0.75}
               >
@@ -233,13 +240,13 @@ export default function Materi() {
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           ) : kelas.length === 0 ? (
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons name="book-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Tidak ada kelas ditemukan</Text>
+              <Text style={g.emptyTitle}>Tidak ada kelas ditemukan</Text>
               <Text style={{ fontSize: 12, color: Colors.hint }}>
                 untuk periode {periodeLabel}
               </Text>
@@ -268,10 +275,10 @@ export default function Materi() {
                       />
                     </View>
                     <View style={styles.kelasInfo}>
-                      <Text style={styles.kelasTitle} numberOfLines={2}>
+                      <Text style={g.listRowTitle} numberOfLines={2}>
                         {mk?.kode ? `${mk.kode} — ${mk.nama}` : mk?.nama || "-"}
                       </Text>
-                      <Text style={styles.kelasSub}>
+                      <Text style={g.listRowSub}>
                         {k.kelas?.nama ? `${k.kelas.nama} Reguler` : ""}
                         {materi[id] ? `  ·  ${materiList.length} materi` : ""}
                       </Text>
@@ -409,70 +416,6 @@ export default function Materi() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 36,
-    overflow: "hidden",
-    gap: 4,
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 14,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
-
   filterScroll: { marginTop: 16 },
   filterRow: {
     flexDirection: "row",
@@ -481,14 +424,10 @@ const styles = StyleSheet.create({
     paddingRight: 32,
   },
 
-  body: { paddingHorizontal: 16, paddingTop: 12 },
-  sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
-
-  // ── kelas card ──
   kelasCard: {
     backgroundColor: Colors.card,
     borderRadius: 12, // was 8
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     marginBottom: 8,
     overflow: "hidden",
@@ -505,8 +444,7 @@ const styles = StyleSheet.create({
     padding: 14, // was 12
   },
   kelasInfo: { flex: 1 },
-  kelasTitle: { fontSize: 13, fontWeight: "700", color: Colors.text },
-  kelasSub: { fontSize: 11, color: Colors.muted, marginTop: 2 },
+
   kelasRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -552,7 +490,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 8, // was 4
-    borderWidth: 1,
+    borderWidth: 0.5,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -566,44 +504,10 @@ const styles = StyleSheet.create({
   },
   materiMetaText: { fontSize: 10, color: Colors.muted },
 
-  // ── skeleton ──
-  skeletonCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.card,
-    borderRadius: 12, // was 8
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14,
-    marginBottom: 8,
-    gap: 12,
-  },
   skeletonLeft: {
     width: 36,
     height: 36,
     borderRadius: 8, // was 4
     backgroundColor: Colors.skeletonBase,
   },
-
-  // ── empty / error ──
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

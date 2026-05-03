@@ -4,13 +4,11 @@ import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Animated,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -65,7 +63,7 @@ const getClassStatus = (
   return "done";
 };
 
-// ─── Skeleton ────────────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 const DaySkeleton = () => (
   <View style={{ marginBottom: 20 }}>
@@ -88,8 +86,10 @@ const DaySkeleton = () => (
       <SkeletonBlock height={13} width="20%" />
     </View>
     {[1, 2].map((j) => (
-      <View key={j} style={styles.skeletonCard}>
-        <View style={styles.skeletonStripe} />
+      <View key={j} style={styles.card}>
+        <View
+          style={[styles.cardStripe, { backgroundColor: Colors.skeletonBase }]}
+        />
         <View style={{ flex: 1, padding: 12, gap: 8 }}>
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
@@ -98,13 +98,7 @@ const DaySkeleton = () => (
             <SkeletonBlock height={14} width="15%" />
           </View>
           <SkeletonBlock height={11} width="25%" />
-          <View
-            style={{
-              height: 1,
-              backgroundColor: Colors.border,
-              marginVertical: 2,
-            }}
-          />
+          <View style={g.divider} />
           <SkeletonBlock height={11} width="60%" />
           <SkeletonBlock height={11} width="40%" />
           <SkeletonBlock height={11} width="50%" />
@@ -121,9 +115,6 @@ export default function Jadwal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [periode, setPeriode] = useState(20252);
-  const [search, setSearch] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const searchAnim = useRef(new Animated.Value(0)).current;
 
   const today = new Date().getDay();
   const isCurrentPeriode = periode === 20252;
@@ -131,24 +122,6 @@ export default function Jadwal() {
   useEffect(() => {
     getJadwal();
   }, [periode]);
-
-  const toggleSearch = () => {
-    if (showSearch) {
-      setSearch("");
-      Animated.timing(searchAnim, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: false,
-      }).start(() => setShowSearch(false));
-    } else {
-      setShowSearch(true);
-      Animated.timing(searchAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }).start();
-    }
-  };
 
   const getJadwal = async () => {
     setLoading(true);
@@ -165,159 +138,94 @@ export default function Jadwal() {
     }
   };
 
-  const filteredData = useMemo(() => {
-    if (!search.trim()) return data;
-    const q = search.toLowerCase();
-    return data.filter(
-      (k) =>
-        k.mata_kuliah?.nama?.toLowerCase().includes(q) ||
-        k.mata_kuliah?.kode?.toLowerCase().includes(q) ||
-        k.pengajar?.some((p: any) =>
-          p.nama_pengajar?.toLowerCase().includes(q),
-        ),
-    );
-  }, [data, search]);
-
-  const perHari: Record<number, any[]> = {};
-  filteredData.forEach((k) => {
-    k.jadwal?.forEach((j: any) => {
-      if (j.hari == null) return;
-      if (!perHari[j.hari]) perHari[j.hari] = [];
-      perHari[j.hari].push({ ...k, _jadwal: j });
+  const perHari = useMemo(() => {
+    const map: Record<number, any[]> = {};
+    data.forEach((k) => {
+      k.jadwal?.forEach((j: any) => {
+        if (j.hari == null) return;
+        if (!map[j.hari]) map[j.hari] = [];
+        map[j.hari].push({ ...k, _jadwal: j });
+      });
     });
-  });
-
-  Object.keys(perHari).forEach((hari) => {
-    perHari[Number(hari)].sort(
-      (a, b) =>
-        toMinutes(a._jadwal?.jam_mulai) - toMinutes(b._jadwal?.jam_mulai),
-    );
-  });
+    Object.keys(map).forEach((hari) => {
+      map[Number(hari)].sort(
+        (a, b) =>
+          toMinutes(a._jadwal?.jam_mulai) - toMinutes(b._jadwal?.jam_mulai),
+      );
+    });
+    return map;
+  }, [data]);
 
   const hariTerurut = Object.keys(perHari)
     .map(Number)
     .sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
-
   const totalSks = data.reduce((sum, k) => sum + (k.mata_kuliah?.sks || 0), 0);
   const kelasHariIni = isCurrentPeriode ? perHari[today]?.length || 0 : 0;
-  const hasJadwal = hariTerurut.length > 0;
-
   const ongoingCount = isCurrentPeriode
     ? (perHari[today] || []).filter(
         (k) => getClassStatus(k._jadwal, true, true) === "ongoing",
       ).length
     : 0;
-
-  const searchHeight = searchAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 44],
-  });
+  const hasJadwal = hariTerurut.length > 0;
 
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── HEADER ── */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <View style={styles.decor4} />
-          <View style={styles.topBar}>
+        {/* HEADER */}
+        <View style={g.headerSection}>
+          <View style={g.topBar}>
             <View>
-              <Text style={styles.heroLabel}>PORTAL MAHASISWA</Text>
-              <Text style={styles.heroTitle}>Jadwal Kuliah</Text>
+              <Text style={g.headerLabel}>PORTAL MAHASISWA</Text>
+              <Text style={g.pageTitle}>Jadwal Kuliah</Text>
             </View>
-            <View
-              style={{ flexDirection: "row", gap: 8, alignItems: "center" }}
-            >
-              <TouchableOpacity
-                style={[styles.iconBtn, showSearch && styles.iconBtnActive]}
-                onPress={toggleSearch}
-                activeOpacity={0.75}
-              >
-                <Ionicons
-                  name={showSearch ? "close" : "search-outline"}
-                  size={16}
-                  color="#fff"
-                />
-              </TouchableOpacity>
-              <View style={styles.uymBadge}>
-                <Text style={styles.uymBadgeText}>UYM</Text>
-              </View>
+            <View style={g.uymBadge}>
+              <Text style={g.uymBadgeText}>UYM</Text>
             </View>
           </View>
 
-          {/* ANIMATED SEARCH */}
-          <Animated.View
-            style={{ height: searchHeight, overflow: "hidden", marginTop: 10 }}
-          >
-            <View style={styles.searchBox}>
-              <Ionicons name="search-outline" size={14} color={Colors.hint} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Cari mata kuliah, kode, atau dosen..."
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                value={search}
-                onChangeText={setSearch}
-                autoFocus={showSearch}
+          {!loading && !error && (
+            <View style={styles.summaryStrip}>
+              <SummaryCard
+                icon="book-outline"
+                value={data.length}
+                label="Mata Kuliah"
               />
-              {search.length > 0 && (
-                <TouchableOpacity onPress={() => setSearch("")}>
-                  <Ionicons
-                    name="close-circle"
-                    size={14}
-                    color="rgba(255,255,255,0.5)"
-                  />
-                </TouchableOpacity>
-              )}
+              <SummaryCard
+                icon="layers-outline"
+                value={totalSks}
+                label="Total SKS"
+              />
+              <SummaryCard
+                icon={ongoingCount > 0 ? "radio-outline" : "today-outline"}
+                value={ongoingCount > 0 ? ongoingCount : kelasHariIni}
+                label={
+                  ongoingCount > 0
+                    ? "Sedang Berlangsung"
+                    : isCurrentPeriode
+                      ? "Kelas Hari Ini"
+                      : "Kelas/Hari"
+                }
+                valueColor={
+                  ongoingCount > 0
+                    ? Colors.dangerText
+                    : isCurrentPeriode && kelasHariIni > 0
+                      ? Colors.successText
+                      : undefined
+                }
+              />
             </View>
-          </Animated.View>
+          )}
         </View>
 
-        {/* ── SUMMARY STRIP ── */}
-        {!loading && !error && (
-          <View style={styles.summaryStrip}>
-            <SummaryCard
-              icon="book-outline"
-              value={data.length}
-              label="Mata Kuliah"
-            />
-            <SummaryCard
-              icon="layers-outline"
-              value={totalSks}
-              label="Total SKS"
-            />
-            <SummaryCard
-              icon={ongoingCount > 0 ? "radio-outline" : "today-outline"}
-              value={ongoingCount > 0 ? ongoingCount : kelasHariIni}
-              label={
-                ongoingCount > 0
-                  ? "Sedang Berlangsung"
-                  : isCurrentPeriode
-                    ? "Kelas Hari Ini"
-                    : "Kelas/Hari"
-              }
-              valueColor={
-                ongoingCount > 0
-                  ? Colors.dangerText
-                  : isCurrentPeriode && kelasHariIni > 0
-                    ? Colors.successText
-                    : undefined
-              }
-            />
-          </View>
-        )}
-
-        {/* ── FILTER PERIODE ── */}
+        {/* PERIODE FILTER */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterRow}
-          style={styles.filterScroll}
+          style={{ marginTop: 14 }}
         >
           {PERIODE_OPTIONS.map((opt) => (
             <TouchableOpacity
@@ -346,61 +254,58 @@ export default function Jadwal() {
           ))}
         </ScrollView>
 
-        {/* ── BODY ── */}
-        <View style={styles.body}>
-          <Text style={styles.sectionLabel}>
-            {loading
-              ? "Memuat jadwal..."
-              : error
-                ? "Gagal memuat data"
-                : search.trim()
-                  ? `${filteredData.length} hasil untuk "${search}"`
-                  : hasJadwal
-                    ? `${data.length} kelas · ${hariTerurut.length} hari aktif`
-                    : "Tidak ada jadwal ditemukan"}
-          </Text>
+        {/* BODY */}
+        <View style={g.body}>
+          {!loading && !error && (
+            <Text style={g.sectionLabel}>
+              {hasJadwal
+                ? `${data.length} kelas · ${hariTerurut.length} hari aktif`
+                : "Tidak ada jadwal ditemukan"}
+            </Text>
+          )}
 
           {/* SKELETON */}
-          {loading ? (
-            [1, 2, 3].map((i) => <DaySkeleton key={i} />)
-          ) : error ? (
-            <View style={styles.empty}>
+          {loading && [1, 2, 3].map((i) => <DaySkeleton key={i} />)}
+
+          {/* ERROR */}
+          {error && (
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={getJadwal}>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
+              <TouchableOpacity style={g.retryBtn} onPress={getJadwal}>
                 <Ionicons
                   name="refresh-outline"
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
-          ) : !hasJadwal ? (
-            <View style={styles.empty}>
+          )}
+
+          {/* EMPTY */}
+          {!loading && !error && !hasJadwal && (
+            <View style={g.empty}>
               <Ionicons
                 name="calendar-outline"
                 size={40}
                 color={Colors.border}
               />
-              <Text style={styles.emptyText}>
-                {search.trim() ? "Tidak ada hasil" : "Tidak ada jadwal"}
-              </Text>
-              <Text style={styles.emptySubText}>
-                {search.trim()
-                  ? "Coba kata kunci lain"
-                  : `untuk periode ${PERIODE_OPTIONS.find((p) => p.value === periode)?.label}`}
+              <Text style={g.emptyTitle}>Tidak ada jadwal</Text>
+              <Text style={g.emptyHint}>
+                {PERIODE_OPTIONS.find((p) => p.value === periode)?.label}
               </Text>
             </View>
-          ) : (
+          )}
+
+          {/* LIST */}
+          {!loading &&
+            !error &&
             hariTerurut.map((hari) => {
               const isToday = isCurrentPeriode && hari === today;
               return (
                 <View key={hari} style={styles.group}>
-                  {/* DAY HEADER */}
                   <View style={styles.dayHeader}>
                     <View
                       style={[
@@ -426,7 +331,6 @@ export default function Jadwal() {
                     </Text>
                   </View>
 
-                  {/* CLASS CARDS */}
                   {perHari[hari].map((k, i) => {
                     const j = k._jadwal;
                     const dosen =
@@ -442,9 +346,15 @@ export default function Jadwal() {
                         key={i}
                         style={[
                           styles.card,
-                          isToday && styles.cardToday,
-                          status === "ongoing" && styles.cardOngoing,
-                          status === "done" && styles.cardDone,
+                          isToday && {
+                            borderColor: Colors.successBorder,
+                            backgroundColor: Colors.successBg,
+                          },
+                          status === "ongoing" && {
+                            borderColor: Colors.dangerBorder,
+                            backgroundColor: Colors.dangerBg,
+                          },
+                          status === "done" && { opacity: 0.55 },
                         ]}
                         activeOpacity={0.75}
                         onPress={() =>
@@ -487,9 +397,9 @@ export default function Jadwal() {
                               }}
                             >
                               {status === "ongoing" && (
-                                <View style={styles.ongoingBadge}>
+                                <View style={g.badgeDanger}>
                                   <View style={styles.ongoingDot} />
-                                  <Text style={styles.ongoingText}>Live</Text>
+                                  <Text style={g.badgeDangerText}>Live</Text>
                                 </View>
                               )}
                               {k.mata_kuliah?.sks && (
@@ -505,9 +415,9 @@ export default function Jadwal() {
                           <Text style={styles.kodeMatkul}>
                             {k.mata_kuliah?.kode || ""}
                           </Text>
-                          <View style={styles.divider} />
+                          <View style={g.divider} />
 
-                          {/* INFO ROWS */}
+                          {/* INFO */}
                           <View style={g.infoRow}>
                             <Ionicons
                               name="person-outline"
@@ -530,8 +440,8 @@ export default function Jadwal() {
                               {`${j?.jam_mulai?.slice(0, 5) ?? "-"} – ${j?.jam_selesai?.slice(0, 5) ?? "-"}`}
                             </Text>
                             {j?.jam_mulai && j?.jam_selesai && (
-                              <View style={styles.durationPill}>
-                                <Text style={styles.durationText}>
+                              <View style={g.badgePrimary}>
+                                <Text style={g.badgePrimaryText}>
                                   {toMinutes(j.jam_selesai) -
                                     toMinutes(j.jam_mulai)}{" "}
                                   mnt
@@ -550,7 +460,7 @@ export default function Jadwal() {
                             </Text>
                           </View>
 
-                          {/* BOTTOM ROW */}
+                          {/* BOTTOM */}
                           <View style={styles.bottomRow}>
                             <View style={styles.modeBadge}>
                               <Ionicons
@@ -597,136 +507,25 @@ export default function Jadwal() {
                   })}
                 </View>
               );
-            })
-          )}
+            })}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 52,
-    overflow: "hidden",
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  heroLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.5)",
-    letterSpacing: 1.2,
-  },
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    marginTop: 2,
-    letterSpacing: -0.3,
-  },
-  iconBtn: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    borderRadius: 8,
-    padding: 7,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  iconBtnActive: {
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderColor: "rgba(255,255,255,0.35)",
-  },
-  uymBadge: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  uymBadgeText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: 0.5,
-  },
-
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 40,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-  },
-  searchInput: { flex: 1, fontSize: 13, color: "#fff", padding: 0 },
-
   summaryStrip: {
     flexDirection: "row",
-    marginHorizontal: 16,
-    marginTop: -22,
     gap: 8,
   },
 
-  filterScroll: { marginTop: 16 },
   filterRow: {
     flexDirection: "row",
     gap: 8,
     paddingHorizontal: 16,
     paddingRight: 32,
   },
-
-  body: { paddingHorizontal: 16, paddingTop: 12 },
-  sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
 
   group: { marginBottom: 20 },
   dayHeader: {
@@ -753,18 +552,12 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 10,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     marginBottom: 8,
     overflow: "hidden",
   },
-  cardToday: {
-    borderColor: Colors.successBorder,
-    backgroundColor: Colors.successBg,
-  },
-  cardOngoing: { borderColor: "#FCA5A5", backgroundColor: "#FFF5F5" },
-  cardDone: { opacity: 0.55 },
   cardStripe: { width: 4 },
   cardBody: { flex: 1, padding: 12, gap: 5 },
   cardTopRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
@@ -781,41 +574,20 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginTop: -2,
   },
-  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 6 },
   infoText: { fontSize: 12, color: Colors.muted, flex: 1 },
 
-  durationPill: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
-  durationText: { fontSize: 10, color: Colors.primary, fontWeight: "600" },
-
-  ongoingBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
   ongoingDot: {
     width: 5,
     height: 5,
     borderRadius: 3,
     backgroundColor: Colors.dangerText,
   },
-  ongoingText: { fontSize: 10, fontWeight: "700", color: Colors.dangerText },
 
   bottomRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: 4,
+    marginTop: 2,
     flexWrap: "wrap",
   },
   modeBadge: {
@@ -832,8 +604,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: Colors.bg,
-    borderWidth: 1,
+    backgroundColor: Colors.surface,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     borderRadius: 6,
     paddingHorizontal: 7,
@@ -847,33 +619,4 @@ const styles = StyleSheet.create({
     marginLeft: "auto",
   },
   tapHintText: { fontSize: 10, color: Colors.primary, fontWeight: "600" },
-
-  skeletonCard: {
-    flexDirection: "row",
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 8,
-    overflow: "hidden",
-  },
-  skeletonStripe: { width: 4, backgroundColor: Colors.skeletonBase },
-
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: { fontSize: 14, color: Colors.muted, fontWeight: "600" },
-  emptySubText: { fontSize: 12, color: Colors.hint },
-
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

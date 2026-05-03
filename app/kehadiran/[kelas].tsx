@@ -15,7 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const STATUS_COLORS = {
   hadir: { color: "#16A34A", bg: "#F0FDF4", border: "#BBF7D0" },
-  izin: { color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
   alpha: { color: "#DC2626", bg: "#FEF2F2", border: "#FECACA" },
   belum: { color: "#6B7280", bg: "#F9FAFB", border: "#E5E7EB" },
 } as const;
@@ -27,7 +26,6 @@ const STATUS_CONFIG: Record<
   { icon: any } & (typeof STATUS_COLORS)[StatusKey]
 > = {
   hadir: { icon: "checkmark-circle", ...STATUS_COLORS.hadir },
-  izin: { icon: "alert-circle", ...STATUS_COLORS.izin },
   alpha: { icon: "close-circle", ...STATUS_COLORS.alpha },
   belum: { icon: "time-outline", ...STATUS_COLORS.belum },
 };
@@ -54,7 +52,6 @@ type PresensiItem = {
 const getStatusKey = (d: PresensiItem): StatusKey => {
   if (!d.ada_presensi) return "belum";
   if (d.presensi === "H") return "hadir";
-  if (d.presensi === "I") return "izin";
   return "alpha";
 };
 
@@ -86,7 +83,6 @@ const fmtJam = (iso?: string) => {
 const FILTER_OPTIONS: { key: StatusKey | "semua"; label: string }[] = [
   { key: "semua", label: "Semua" },
   { key: "hadir", label: "Hadir" },
-  { key: "izin", label: "Izin" },
   { key: "alpha", label: "Tidak Hadir" },
   { key: "belum", label: "Belum" },
 ];
@@ -138,7 +134,6 @@ export default function DetailKehadiran() {
 
   const SUMMARY: { key: StatusKey; label: string; value: number }[] = [
     { key: "hadir", label: "Hadir", value: totalHadir },
-    { key: "izin", label: "Izin", value: totalIzin },
     { key: "alpha", label: "Tidak Hadir", value: totalAlpha },
     { key: "belum", label: "Belum", value: totalBelum },
   ];
@@ -167,24 +162,21 @@ export default function DetailKehadiran() {
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <View style={styles.decor4} />
-
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={styles.backLabel}>Kembali</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle} numberOfLines={2}>
+        <View style={g.header}>
+          <View style={g.headerTop}>
+            <TouchableOpacity
+              style={g.backBtn}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Text style={g.backLabel}>Kembali</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={g.headerTitle} numberOfLines={2}>
             {loading ? "Detail Kehadiran" : namaMK}
           </Text>
-          <Text style={styles.headerSub}>
+          <Text style={g.headerSub}>
             {loading
               ? "Memuat data..."
               : error
@@ -193,7 +185,7 @@ export default function DetailKehadiran() {
           </Text>
         </View>
 
-        <View style={styles.body}>
+        <View style={g.body}>
           {/* SUMMARY CARD */}
           {loading ? (
             <View style={styles.summaryCardSkeleton}>
@@ -264,17 +256,17 @@ export default function DetailKehadiran() {
 
           {/* WARNING KEHADIRAN */}
           {!loading && !error && totalAlpha >= 2 && (
-            <View style={styles.warningKehadiran}>
+            <View style={g.warningBox}>
               <Ionicons
                 name="alert-circle-outline"
                 size={16}
                 color={Colors.warningText}
               />
               <View style={{ flex: 1 }}>
-                <Text style={styles.warningTitle}>
+                <Text style={[g.warningBoxText, { fontWeight: "700" }]}>
                   Kehadiran perlu diperhatikan
                 </Text>
-                <Text style={styles.warningDesc}>
+                <Text style={g.warningBoxText}>
                   Kamu sudah tidak hadir {totalAlpha}x. Kehadiran yang kurang
                   dapat mempengaruhi akses UTS/UAS.
                 </Text>
@@ -329,7 +321,7 @@ export default function DetailKehadiran() {
           )}
 
           {/* SECTION LABEL */}
-          <Text style={styles.sectionLabel}>
+          <Text style={g.sectionLabel}>
             {loading
               ? "Memuat data..."
               : error
@@ -340,8 +332,22 @@ export default function DetailKehadiran() {
           {/* LIST */}
           {loading ? (
             [1, 2, 3, 4, 5].map((i) => (
-              <View key={i} style={styles.skeletonCard}>
-                <View style={styles.skeletonLeft} />
+              <View
+                key={i}
+                style={[
+                  g.card,
+                  { flexDirection: "row", alignItems: "center", gap: 12 },
+                ]}
+              >
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    backgroundColor: Colors.skeletonBase,
+                  }}
+                />
+
                 <View style={{ flex: 1, gap: 8 }}>
                   <SkeletonBlock width="50%" height={12} />
                   <SkeletonBlock width="70%" height={11} />
@@ -350,14 +356,12 @@ export default function DetailKehadiran() {
               </View>
             ))
           ) : error ? (
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
               <TouchableOpacity
-                style={styles.retryBtn}
+                style={g.retryBtn}
                 onPress={getData}
                 activeOpacity={0.75}
               >
@@ -366,15 +370,13 @@ export default function DetailKehadiran() {
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           ) : dataFiltered.length === 0 ? (
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons name="search-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>
-                Tidak ada data untuk filter ini
-              </Text>
+              <Text style={g.emptyTitle}>Tidak ada data untuk filter ini</Text>
             </View>
           ) : (
             dataFiltered.map((d, i) => {
@@ -392,7 +394,7 @@ export default function DetailKehadiran() {
                   >
                     <Ionicons name={cfg.icon} size={18} color={cfg.color} />
                   </View>
-                  <View style={styles.cardContent}>
+                  <View style={{ flex: 1 }}>
                     <Text style={styles.cardTitle}>
                       Pertemuan {d.pertemuan?.nomor ?? i + 1}
                       {d.pertemuan?.jenis ? ` · ${d.pertemuan.jenis}` : ""}
@@ -414,11 +416,15 @@ export default function DetailKehadiran() {
                   </View>
                   <View
                     style={[
-                      styles.badge,
-                      { backgroundColor: cfg.bg, borderColor: cfg.border },
+                      g.badgePrimary,
+                      {
+                        backgroundColor: cfg.bg,
+                        borderColor: cfg.border,
+                        borderRadius: 20,
+                      },
                     ]}
                   >
-                    <Text style={[styles.badgeText, { color: cfg.color }]}>
+                    <Text style={[g.badgePrimaryText, { color: cfg.color }]}>
                       {status}
                     </Text>
                   </View>
@@ -433,73 +439,6 @@ export default function DetailKehadiran() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 36,
-    overflow: "hidden",
-    gap: 4,
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 14,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
-
-  body: { paddingHorizontal: 16, paddingTop: 16 },
-  sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
-
   summaryCard: {
     backgroundColor: Colors.card,
     borderRadius: 12,
@@ -549,25 +488,6 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 18, fontWeight: "700" },
   statLabel: { fontSize: 10, fontWeight: "500" },
 
-  warningKehadiran: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: Colors.warningBg,
-    borderWidth: 1,
-    borderColor: Colors.warningBorder,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
-  },
-  warningTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: Colors.warningText,
-    marginBottom: 2,
-  },
-  warningDesc: { fontSize: 11, color: Colors.warningText, lineHeight: 16 },
-
   filterScroll: { marginBottom: 4 },
   filterRow: { flexDirection: "row", gap: 8, paddingRight: 16 },
 
@@ -587,57 +507,11 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 13, fontWeight: "600", color: Colors.text },
   cardDate: { fontSize: 11, color: Colors.muted, marginTop: 2 },
   cardMateri: { fontSize: 11, color: Colors.muted, marginTop: 1 },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  badgeText: { fontSize: 11, fontWeight: "600" },
 
-  skeletonCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14,
-    marginBottom: 8,
-    gap: 12,
-  },
-  skeletonLeft: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: Colors.skeletonBase,
-  },
   skeletonStatBox: {
     flex: 1,
     height: 56,
     borderRadius: 8,
     backgroundColor: Colors.skeletonBase,
   },
-
-  // ── Empty / Error ──────────────────────────────────────────────────────────
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

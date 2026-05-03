@@ -24,7 +24,6 @@ const PERIODE_OPTIONS = [
 ];
 
 const JENIS_OPTIONS = [
-  { value: "", label: "Semua" },
   { value: "kuis", label: "Kuis" },
   { value: "ujian", label: "Ujian" },
   { value: "uts", label: "UTS" },
@@ -166,51 +165,48 @@ export default function Ujian() {
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <View style={styles.decor4} />
+        <View style={g.header}>
+          <View style={g.headerTop}>
+            <TouchableOpacity
+              style={g.backBtn}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Text style={g.backLabel}>Kembali</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={styles.backLabel}>Kembali</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Ujian & Kuis</Text>
-          <Text style={styles.headerSub}>
+            {!loading && !error && (
+              <View style={styles.pillRow}>
+                {aktifCount > 0 && (
+                  <View style={styles.activePill}>
+                    <View style={styles.activeDot} />
+                    <Text style={styles.activePillText}>
+                      {aktifCount} sedang berlangsung
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.statPill}>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={12}
+                    color="#fff"
+                  />
+                  <Text style={styles.statPillText}>
+                    {sudahCount}/{data.length} dikerjakan
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+          <Text style={g.headerTitle}>Ujian & Kuis</Text>
+          <Text style={g.headerSub}>
             {loading
               ? "Memuat ujian..."
               : error
                 ? "Gagal memuat data"
                 : periodeLabel}
           </Text>
-
-          {!loading && !error && (
-            <View style={styles.pillRow}>
-              {aktifCount > 0 && (
-                <View style={styles.activePill}>
-                  <View style={styles.activeDot} />
-                  <Text style={styles.activePillText}>
-                    {aktifCount} sedang berlangsung
-                  </Text>
-                </View>
-              )}
-              <View style={styles.statPill}>
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={12}
-                  color="#fff"
-                />
-                <Text style={styles.statPillText}>
-                  {sudahCount}/{data.length} dikerjakan
-                </Text>
-              </View>
-            </View>
-          )}
         </View>
 
         {/* SEARCH BAR */}
@@ -292,8 +288,8 @@ export default function Ujian() {
         </ScrollView>
 
         {/* BODY */}
-        <View style={styles.body}>
-          <Text style={styles.sectionLabel}>
+        <View style={g.body}>
+          <Text style={g.sectionLabel}>
             {loading
               ? "Memuat ujian..."
               : error
@@ -308,33 +304,29 @@ export default function Ujian() {
             [1, 2, 3].map((i) => <UjianSkeleton key={i} />)
           ) : error ? (
             /* ── ERROR STATE ── */
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={getUjian}>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
+              <TouchableOpacity style={g.retryBtn} onPress={getUjian}>
                 <Ionicons
                   name="refresh-outline"
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           ) : data.length === 0 ? (
             /* ── EMPTY STATE ── */
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons
                 name="document-text-outline"
                 size={40}
                 color={Colors.border}
               />
-              <Text style={styles.emptyText}>Tidak ada ujian</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                untuk periode {periodeLabel}
-              </Text>
+              <Text style={g.emptyTitle}>Tidak ada ujian</Text>
+              <Text style={g.emptyHint}>untuk periode {periodeLabel}</Text>
             </View>
           ) : (
             /* ── DATA ── */
@@ -389,33 +381,29 @@ export default function Ujian() {
                         />
                       </View>
                       <View style={styles.badgeRow}>
-                        <View style={styles.jenisBadge}>
-                          <Text style={styles.jenisBadgeText}>
+                        <View style={g.badgePrimary}>
+                          <Text style={g.badgePrimaryText}>
                             {u.jenis?.toUpperCase() ?? "-"}
                           </Text>
                         </View>
                         <View
-                          style={[
-                            styles.statusBadge,
+                          style={
                             isAktif
-                              ? styles.statusAktif
+                              ? g.badgeSuccess
                               : isSelesai
-                                ? styles.statusSelesai
-                                : styles.statusBelum,
-                          ]}
+                                ? g.badgeSlate
+                                : g.badgeWarning
+                          }
                         >
                           {isAktif && <View style={styles.statusDot} />}
                           <Text
-                            style={[
-                              styles.statusText,
-                              {
-                                color: isAktif
-                                  ? Colors.successText
-                                  : isSelesai
-                                    ? Colors.muted
-                                    : Colors.warningText,
-                              },
-                            ]}
+                            style={
+                              isAktif
+                                ? g.badgeSuccessText
+                                : isSelesai
+                                  ? g.badgeSlateText
+                                  : g.badgeWarningText
+                            }
                           >
                             {isAktif
                               ? "Berlangsung"
@@ -435,8 +423,7 @@ export default function Ujian() {
                       {mk?.kode ? `${mk.kode} — ${mk.nama}` : mk?.nama || "-"}
                     </Text>
 
-                    <View style={styles.divider} />
-
+                    <View style={g.divider} />
                     {/* INFO ROWS */}
                     {kelas?.nama && (
                       <View style={g.infoRow}>
@@ -523,7 +510,7 @@ export default function Ujian() {
                     {/* TOMBOL */}
                     <View style={styles.btnRow}>
                       <TouchableOpacity
-                        style={styles.detailBtn}
+                        style={g.retryBtn}
                         onPress={handleNavigate}
                         activeOpacity={0.75}
                       >
@@ -532,7 +519,7 @@ export default function Ujian() {
                           size={14}
                           color={Colors.primary}
                         />
-                        <Text style={styles.detailBtnText}>Detail</Text>
+                        <Text style={g.retryText}>Detail</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[
@@ -587,69 +574,6 @@ export default function Ujian() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 36,
-    overflow: "hidden",
-    gap: 4,
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 14,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
   pillRow: {
     flexDirection: "row",
     gap: 8,
@@ -689,7 +613,7 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: Colors.card,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     marginHorizontal: 16,
     marginTop: 16,
@@ -711,15 +635,11 @@ const styles = StyleSheet.create({
     paddingRight: 32,
   },
 
-  body: { paddingHorizontal: 16, paddingTop: 12 },
-  sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
-
-  // ─── Card ────────────────────────────────────────────────────────────────────
   card: {
     flexDirection: "row",
     backgroundColor: Colors.card,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     marginBottom: 10,
     overflow: "hidden",
@@ -742,34 +662,6 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: Colors.border, marginVertical: 2 },
   infoText: { fontSize: 12, color: Colors.muted, flex: 1 },
 
-  jenisBadge: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-  },
-  jenisBadgeText: { fontSize: 9, fontWeight: "700", color: Colors.primary },
-
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  statusAktif: {
-    backgroundColor: Colors.successBg,
-    borderColor: Colors.successBorder,
-  },
-  statusBelum: {
-    backgroundColor: Colors.warningBg,
-    borderColor: Colors.warningBorder,
-  },
-  statusSelesai: { backgroundColor: "#F3F4F6", borderColor: Colors.border },
   statusDot: {
     width: 6,
     height: 6,
@@ -779,18 +671,7 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 10, fontWeight: "700" },
 
   btnRow: { flexDirection: "row", gap: 8, marginTop: 4 },
-  detailBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-  },
-  detailBtnText: { fontSize: 12, fontWeight: "600", color: Colors.primary },
+
   kerjakanBtn: {
     flex: 1,
     flexDirection: "row",
@@ -803,17 +684,16 @@ const styles = StyleSheet.create({
   },
   kerjakanBtnMuted: {
     backgroundColor: "#F3F4F6",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   kerjakanBtnText: { fontSize: 13, fontWeight: "700", color: "#fff" },
 
-  // ─── Skeleton ────────────────────────────────────────────────────────────────
   skeletonCard: {
     flexDirection: "row",
     backgroundColor: Colors.card,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     marginBottom: 10,
     overflow: "hidden",
@@ -838,26 +718,4 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
-
-  // ─── Empty / Error ───────────────────────────────────────────────────────────
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

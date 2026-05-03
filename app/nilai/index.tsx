@@ -141,22 +141,19 @@ export default function Nilai() {
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <View style={styles.decor4} />
-
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={styles.backLabel}>Kembali</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Nilai</Text>
-          <Text style={styles.headerSub}>{periodeLabel}</Text>
+        <View style={g.header}>
+          <View style={g.headerTop}>
+            <TouchableOpacity
+              style={g.backBtn}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Text style={g.backLabel}>Kembali</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={g.headerTitle}>Nilai</Text>
+          <Text style={g.headerSub}>{periodeLabel}</Text>
         </View>
 
         {/* FILTER PERIODE */}
@@ -193,10 +190,21 @@ export default function Nilai() {
           ))}
         </ScrollView>
 
-        <View style={styles.body}>
+        <View style={g.body}>
           {/* RATA-RATA SEMESTER CARD */}
           {!loading && !error && rataRataSemester !== null && (
-            <View style={styles.ipkCard}>
+            <View
+              style={[
+                g.card,
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: 14,
+                  marginBottom: 16,
+                },
+              ]}
+            >
               <View style={styles.ipkLeft}>
                 <View style={g.iconWrap}>
                   <Ionicons
@@ -220,7 +228,7 @@ export default function Nilai() {
           )}
 
           {/* SECTION LABEL */}
-          <Text style={styles.sectionLabel}>
+          <Text style={g.sectionLabel}>
             {loading
               ? "Memuat nilai..."
               : error
@@ -231,8 +239,27 @@ export default function Nilai() {
           {/* SKELETON / ERROR / EMPTY / LIST */}
           {loading ? (
             [1, 2, 3, 4].map((i) => (
-              <View key={i} style={styles.skeletonCard}>
-                <View style={styles.skeletonLeft} />
+              <View
+                key={i}
+                style={[
+                  g.card,
+                  {
+                    padding: 14,
+                    marginBottom: 8,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    backgroundColor: Colors.skeletonBase,
+                  }}
+                />
                 <View style={{ flex: 1, gap: 8 }}>
                   <SkeletonBlock width="70%" height={13} />
                   <SkeletonBlock width="45%" height={11} />
@@ -240,14 +267,12 @@ export default function Nilai() {
               </View>
             ))
           ) : error ? (
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
               <TouchableOpacity
-                style={styles.retryBtn}
+                style={g.retryBtn}
                 onPress={getNilai}
                 activeOpacity={0.75}
               >
@@ -256,20 +281,18 @@ export default function Nilai() {
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           ) : data.length === 0 ? (
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons
                 name="document-outline"
                 size={40}
                 color={Colors.border}
               />
-              <Text style={styles.emptyText}>Belum ada nilai tersedia</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                untuk periode {periodeLabel}
-              </Text>
+              <Text style={g.emptyTitle}>Belum ada nilai tersedia</Text>
+              <Text style={g.emptyHint}>untuk periode {periodeLabel}</Text>
             </View>
           ) : (
             data.map((k) => {
@@ -281,7 +304,10 @@ export default function Nilai() {
               const isExpanded = expanded[k.id_kelas_kuliah] ?? false;
 
               return (
-                <View key={k.id_kelas_kuliah} style={styles.card}>
+                <View
+                  key={k.id_kelas_kuliah}
+                  style={[g.card, { marginBottom: 8, overflow: "hidden" }]}
+                >
                   <TouchableOpacity
                     style={styles.cardHeader}
                     activeOpacity={0.75}
@@ -294,11 +320,11 @@ export default function Nilai() {
                         color={Colors.primary}
                       />
                     </View>
-                    <View style={styles.cardContent}>
-                      <Text style={styles.cardTitle} numberOfLines={2}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={g.listRowTitle} numberOfLines={2}>
                         {mk?.kode ? `${mk.kode} — ${mk.nama}` : mk?.nama || "-"}
                       </Text>
-                      <Text style={styles.cardSub} numberOfLines={1}>
+                      <Text style={g.listRowSub} numberOfLines={1}>
                         {kelasNama ? `${kelasNama} Reguler` : ""}
                         {nilaiPertemuan.length > 0
                           ? `  ·  ${nilaiPertemuan.length} penilaian`
@@ -350,16 +376,17 @@ export default function Nilai() {
                           >
                             <View
                               style={[
-                                styles.jenisBadge,
+                                g.badgePrimary,
                                 {
                                   backgroundColor: jenisColor.bg,
                                   borderColor: jenisColor.border,
+                                  minWidth: 44,
                                 },
                               ]}
                             >
                               <Text
                                 style={[
-                                  styles.jenisBadgeText,
+                                  g.badgePrimaryText,
                                   { color: jenisColor.color },
                                 ]}
                               >
@@ -380,9 +407,7 @@ export default function Nilai() {
 
                   {isExpanded && nilaiPertemuan.length === 0 && (
                     <View style={styles.detailEmpty}>
-                      <Text style={styles.detailEmptyText}>
-                        Belum ada nilai masuk
-                      </Text>
+                      <Text style={g.emptyHint}>Belum ada nilai masuk</Text>
                     </View>
                   )}
                 </View>
@@ -396,70 +421,6 @@ export default function Nilai() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 36,
-    overflow: "hidden",
-    gap: 4,
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 14,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
-
   filterScroll: { marginTop: 16 },
   filterRow: {
     flexDirection: "row",
@@ -468,20 +429,6 @@ const styles = StyleSheet.create({
     paddingRight: 32,
   },
 
-  body: { paddingHorizontal: 16, paddingTop: 12 },
-  sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
-
-  ipkCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14,
-    marginBottom: 16,
-  },
   ipkLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
   ipkLabel: { fontSize: 13, fontWeight: "600", color: Colors.text },
   ipkSub: { fontSize: 11, color: Colors.muted, marginTop: 2 },
@@ -489,25 +436,15 @@ const styles = StyleSheet.create({
   ipkValue: { fontSize: 24, fontWeight: "700", color: Colors.primary },
   ipkSks: { fontSize: 11, color: Colors.muted, marginTop: 1 },
 
-  card: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 8,
-    overflow: "hidden",
-  },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
     gap: 12,
   },
-  cardContent: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: "600", color: Colors.text },
-  cardSub: { fontSize: 12, color: Colors.muted, marginTop: 2 },
+
   badge: {
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -531,15 +468,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  jenisBadge: {
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    minWidth: 44,
-    alignItems: "center",
-  },
-  jenisBadgeText: { fontSize: 10, fontWeight: "700" },
+
   detailLabel: { flex: 1, fontSize: 12, color: Colors.text },
   detailNilai: {
     fontSize: 14,
@@ -554,45 +483,4 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: "center",
   },
-  detailEmptyText: { fontSize: 12, color: Colors.muted },
-
-  skeletonCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14,
-    marginBottom: 8,
-    gap: 12,
-  },
-  skeletonLeft: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: Colors.skeletonBase,
-  },
-
-  // ── Empty / Error ──────────────────────────────────────────────────────────
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

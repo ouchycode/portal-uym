@@ -32,14 +32,14 @@ export function FilterTab<T extends string>({
               <View
                 style={{
                   backgroundColor: isActive
-                    ? "rgba(255,255,255,0.25)"
+                    ? "rgba(255,255,255,0.2)"
                     : Colors.bg,
-                  borderRadius: 3,
+                  borderRadius: 10,
                   paddingHorizontal: 6,
                   paddingVertical: 1,
                   minWidth: 20,
                   alignItems: "center",
-                  borderWidth: 1,
+                  borderWidth: 0.5,
                   borderColor: isActive
                     ? "rgba(255,255,255,0.2)"
                     : Colors.border,
@@ -48,7 +48,7 @@ export function FilterTab<T extends string>({
                 <Text
                   style={{
                     fontSize: 10,
-                    fontWeight: "800",
+                    fontWeight: "600",
                     color: isActive ? "#fff" : Colors.muted,
                   }}
                 >

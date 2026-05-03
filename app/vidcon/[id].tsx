@@ -43,9 +43,8 @@ const getStatus = (v: any): "live" | "selesai" | "pending" => {
   return "pending";
 };
 
-// ─── Skeleton: strukturnya identik dengan card konten asli ───────────────────
 const DetailSkeleton = () => (
-  <View style={styles.card}>
+  <View style={g.card}>
     {/* stripe kiri */}
     <View style={styles.skeletonStripe} />
     <View style={{ flex: 1, padding: 12, gap: 8 }}>
@@ -142,82 +141,76 @@ export default function VidconDetail() {
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={styles.backLabel}>Kembali</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{mkTitle}</Text>
-          <Text style={styles.headerSub}>
-            {data?.judul || judulParam || "-"}
-          </Text>
-          {!loading && data && (
-            <View
-              style={[
-                styles.statusPill,
-                isLive
-                  ? styles.statusPillLive
-                  : isSelesai
-                    ? styles.statusPillSelesai
-                    : styles.statusPillPending,
-              ]}
+        <View style={g.header}>
+          <View style={g.headerTop}>
+            <TouchableOpacity
+              style={g.backBtn}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
             >
-              {isLive && <View style={styles.statusDot} />}
-              <Text style={styles.statusPillText}>
-                {isLive
-                  ? "Sedang Berlangsung"
-                  : isSelesai
-                    ? "Sesi Selesai"
-                    : "Belum Mulai"}
-              </Text>
-            </View>
-          )}
+              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Text style={g.backLabel}>Kembali</Text>
+            </TouchableOpacity>
+
+            {!loading && data && (
+              <View
+                style={[
+                  styles.statusPill,
+                  isLive
+                    ? styles.statusPillLive
+                    : isSelesai
+                      ? styles.statusPillSelesai
+                      : styles.statusPillPending,
+                ]}
+              >
+                {isLive && <View style={styles.statusDot} />}
+                <Text style={styles.statusPillText}>
+                  {isLive
+                    ? "Sedang Berlangsung"
+                    : isSelesai
+                      ? "Sesi Selesai"
+                      : "Belum Mulai"}
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text style={g.headerTitle}>{mkTitle}</Text>
+          <Text style={g.headerSub}>{data?.judul || judulParam || "-"}</Text>
         </View>
 
-        <View style={styles.body}>
+        <View style={g.body}>
           {/* ── SKELETON ── */}
           {loading ? (
             <DetailSkeleton />
           ) : error ? (
             /* ── ERROR STATE ── */
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={getDetail}>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
+              <TouchableOpacity style={g.retryBtn} onPress={getDetail}>
                 <Ionicons
                   name="refresh-outline"
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           ) : !data ? (
             /* ── EMPTY STATE ── */
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons
                 name="videocam-off-outline"
                 size={40}
                 color={Colors.border}
               />
-              <Text style={styles.emptyText}>Tidak ada data vidcon</Text>
+              <Text style={g.emptyTitle}>Tidak ada data vidcon</Text>
             </View>
           ) : (
-            /* ── KONTEN ── */
             <>
               {/* INFO CARD */}
-              <View style={styles.card}>
-                <View style={styles.cardStripe} />
+              <View style={[g.card, g.cardAccent]}>
                 <View style={styles.cardBody}>
                   <View style={styles.cardTopRow}>
                     <View style={g.iconWrap}>
@@ -234,8 +227,7 @@ export default function VidconDetail() {
                     </Text>
                   </View>
 
-                  <View style={styles.divider} />
-
+                  <View style={g.divider} />
                   {kelas?.nama && (
                     <View style={g.infoRow}>
                       <Ionicons
@@ -299,7 +291,7 @@ export default function VidconDetail() {
               {data.join_data?.length > 0 && (
                 <>
                   <View style={styles.pesertaHeader}>
-                    <Text style={styles.sectionLabel}>
+                    <Text style={g.sectionLabel}>
                       Peserta Bergabung ({data.join_data.length})
                     </Text>
                     {data.join_data.length > 3 && (
@@ -316,7 +308,7 @@ export default function VidconDetail() {
                     ? data.join_data
                     : data.join_data.slice(0, 3)
                   ).map((j: any, i: number) => (
-                    <View key={i} style={styles.pesertaRow}>
+                    <View key={i} style={[g.listRow, { gap: 10 }]}>
                       <View style={g.iconWrap}>
                         <Ionicons
                           name="person-outline"
@@ -325,8 +317,8 @@ export default function VidconDetail() {
                         />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.pesertaNama}>{j.username}</Text>
-                        <Text style={styles.pesertaWaktu}>
+                        <Text style={g.listRowTitle}>{j.username}</Text>
+                        <Text style={g.listRowSub}>
                           {new Date(j.waktu_join).toLocaleString("id-ID", {
                             day: "numeric",
                             month: "short",
@@ -343,8 +335,9 @@ export default function VidconDetail() {
               {/* BUTTON JOIN MEETING */}
               <TouchableOpacity
                 style={[
-                  styles.joinBtn,
-                  (!hasLink || isSelesai) && styles.joinBtnMuted,
+                  g.btnPrimary,
+                  { flexDirection: "row", gap: 8 },
+                  (!hasLink || isSelesai) && g.btnGhost,
                 ]}
                 onPress={() => openMeeting(data.link || data.url)}
                 disabled={!hasLink || isSelesai}
@@ -357,7 +350,7 @@ export default function VidconDetail() {
                 />
                 <Text
                   style={[
-                    styles.joinBtnText,
+                    g.btnPrimaryText,
                     isSelesai && { color: Colors.muted },
                   ]}
                 >
@@ -373,55 +366,6 @@ export default function VidconDetail() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 36,
-    overflow: "hidden",
-    gap: 4,
-  },
-  decor1: {
-    position: "absolute",
-    top: -28,
-    right: -28,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.05)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 10,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#fff" },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.6)" },
   statusPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -443,14 +387,6 @@ const styles = StyleSheet.create({
   },
   statusPillText: { fontSize: 11, color: "#fff", fontWeight: "600" },
 
-  body: { paddingHorizontal: 16, paddingTop: 16, gap: 10 },
-  sectionLabel: {
-    fontSize: 12,
-    color: Colors.muted,
-    marginTop: 8,
-    marginBottom: 4,
-  },
-
   // ─── Skeleton ────────────────────────────────────────────────────────────────
   skeletonStripe: {
     width: 4,
@@ -463,38 +399,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.skeletonBase,
   },
 
-  // ─── Empty / Error ───────────────────────────────────────────────────────────
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
-
-  // ─── Card ────────────────────────────────────────────────────────────────────
-  card: {
-    flexDirection: "row",
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: "hidden",
-  },
-  cardStripe: { width: 4, backgroundColor: Colors.primary },
   cardBody: { flex: 1, padding: 12, gap: 6 },
   cardTopRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   cardTitle: {
@@ -504,10 +408,8 @@ const styles = StyleSheet.create({
     color: Colors.text,
     lineHeight: 20,
   },
-  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 2 },
   infoText: { fontSize: 12, color: Colors.muted, flex: 1 },
 
-  // ─── Peserta ─────────────────────────────────────────────────────────────────
   pesertaHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -516,34 +418,4 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   toggleText: { fontSize: 11, color: Colors.primary, fontWeight: "600" },
-  pesertaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 10,
-  },
-  pesertaNama: { fontSize: 13, fontWeight: "600", color: Colors.text },
-  pesertaWaktu: { fontSize: 11, color: Colors.muted, marginTop: 2 },
-
-  // ─── Join Button ─────────────────────────────────────────────────────────────
-  joinBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: Colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    marginTop: 8,
-  },
-  joinBtnMuted: {
-    backgroundColor: "#F3F4F6",
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  joinBtnText: { fontSize: 14, fontWeight: "700", color: "#fff" },
 });

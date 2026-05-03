@@ -59,12 +59,9 @@ const QUICK_MENUS = [
 
 const getDeadlineInfo = (waktuSelesai: string) => {
   if (!waktuSelesai) return null;
-  const now = new Date();
-  const deadline = new Date(waktuSelesai);
-  const diffMs = deadline.getTime() - now.getTime();
+  const diffMs = new Date(waktuSelesai).getTime() - Date.now();
   const diffHours = diffMs / (1000 * 60 * 60);
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
   if (diffMs < 0)
     return {
       label: "Terlambat",
@@ -88,10 +85,10 @@ const getDeadlineInfo = (waktuSelesai: string) => {
 };
 
 const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 11) return "Selamat pagi";
-  if (hour < 15) return "Selamat siang";
-  if (hour < 18) return "Selamat sore";
+  const h = new Date().getHours();
+  if (h < 11) return "Selamat pagi";
+  if (h < 15) return "Selamat siang";
+  if (h < 18) return "Selamat sore";
   return "Selamat malam";
 };
 
@@ -149,12 +146,7 @@ export default function Home() {
   const openMeeting = async (url: string) => {
     if (!url) return;
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        await Linking.openURL(url);
-      }
+      await Linking.openURL(url);
     } catch {
       Alert.alert("Gagal", "Tidak bisa membuka link meeting.");
     }
@@ -162,7 +154,6 @@ export default function Home() {
 
   const tugasBelum = tugas.filter((t) => t.jumlah_pengumpulan === 0);
   const today = new Date().getDay();
-  const jadwalHariIni = jadwal;
   const vidconAktif = vidcon
     .filter(
       (v) => getVidconStatus(v.waktu_mulai, v.waktu_selesai) !== "selesai",
@@ -189,232 +180,153 @@ export default function Home() {
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── HEADER ── */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <View style={styles.decor4} />
-          <View style={styles.topBar}>
-            <View>
-              <Text style={styles.heroLabel}>PORTAL MAHASISWA</Text>
-              <Text style={styles.greetSub}>{getGreeting()},</Text>
-              <Text style={styles.greetName}>{firstName} 👋</Text>
-              <Text style={styles.greetDate}>{tanggalHariIni}</Text>
+        {/* HEADER */}
+        <View style={g.headerSection}>
+          <View style={g.topBar}>
+            <View style={{ flex: 1 }}>
+              <Text style={g.headerLabel}>PORTAL MAHASISWA</Text>
+              <Text style={styles.greetName}>
+                {getGreeting()}, {firstName} 👋
+              </Text>
+              <Text style={g.pageSubtitle}>{tanggalHariIni}</Text>
             </View>
-            <View style={styles.uymBadge}>
-              <Text style={styles.uymBadgeText}>UYM</Text>
+            <View style={g.uymBadge}>
+              <Text style={g.uymBadgeText}>UYM</Text>
             </View>
           </View>
-        </View>
 
-        {/* ── SUMMARY STRIP ── */}
-        {!loading && !error && (
-          <View style={styles.summaryStrip}>
-            <View style={g.summaryCard}>
-              <Ionicons
-                name="document-text-outline"
-                size={18}
-                color={
-                  tugasBelum.length > 0 ? Colors.warningText : Colors.primary
-                }
-              />
-              <Text
-                style={[
-                  g.summaryValue,
-                  tugasBelum.length > 0 ? { color: Colors.warningText } : null,
-                ]}
-              >
-                {tugasBelum.length}
-              </Text>
-              <Text style={g.summaryLabel}>Tugas Pending</Text>
-            </View>
-            <View style={g.summaryCard}>
-              <Ionicons name="today-outline" size={18} color={Colors.primary} />
-              <Text style={g.summaryValue}>{jadwalHariIni.length}</Text>
-              <Text style={g.summaryLabel}>Kelas Aktif</Text>
-            </View>
-            <View style={g.summaryCard}>
-              <Ionicons
-                name="videocam-outline"
-                size={18}
-                color={hasLiveVidcon ? Colors.successText : Colors.primary}
-              />
-              <Text
-                style={[
-                  g.summaryValue,
-                  hasLiveVidcon ? { color: Colors.successText } : null,
-                ]}
-              >
-                {vidconAktif.length}
-              </Text>
-              <Text style={g.summaryLabel}>Vidcon Aktif</Text>
-            </View>
-          </View>
-        )}
-
-        <View style={styles.body}>
-          {/* ── ERROR STATE ── */}
-          {error && (
-            <View style={styles.errorBox}>
-              <Ionicons
-                name="wifi-outline"
-                size={16}
-                color={Colors.dangerText}
-              />
-              <Text style={styles.errorText}>Gagal memuat data</Text>
-              <TouchableOpacity onPress={loadData} style={styles.retryBtn}>
+          {/* SUMMARY STRIP */}
+          {!loading && !error && (
+            <View style={styles.summaryStrip}>
+              <View style={g.summaryCard}>
                 <Ionicons
-                  name="refresh-outline"
-                  size={15}
+                  name="document-text-outline"
+                  size={18}
+                  color={
+                    tugasBelum.length > 0 ? Colors.warningText : Colors.primary
+                  }
+                />
+                <Text
+                  style={[
+                    g.summaryValue,
+                    tugasBelum.length > 0 && { color: Colors.warningText },
+                  ]}
+                >
+                  {tugasBelum.length}
+                </Text>
+                <Text style={g.summaryLabel}>Tugas Pending</Text>
+              </View>
+              <View style={g.summaryCard}>
+                <Ionicons
+                  name="today-outline"
+                  size={18}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.summaryValue}>{jadwal.length}</Text>
+                <Text style={g.summaryLabel}>Kelas Aktif</Text>
+              </View>
+              <View style={g.summaryCard}>
+                <Ionicons
+                  name="videocam-outline"
+                  size={18}
+                  color={hasLiveVidcon ? Colors.successText : Colors.primary}
+                />
+                <Text
+                  style={[
+                    g.summaryValue,
+                    hasLiveVidcon && { color: Colors.successText },
+                  ]}
+                >
+                  {vidconAktif.length}
+                </Text>
+                <Text style={g.summaryLabel}>Vidcon Aktif</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <View style={g.body}>
+          {/* ERROR */}
+          {error && (
+            <View style={g.errorBox}>
+              <Ionicons
+                name="wifi-outline"
+                size={14}
+                color={Colors.dangerText}
+              />
+              <Text style={g.errorText}>Gagal memuat data</Text>
+              <TouchableOpacity onPress={loadData} style={styles.retryInline}>
+                <Ionicons
+                  name="refresh-outline"
+                  size={14}
+                  color={Colors.primary}
+                />
+                <Text style={styles.retryInlineText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {/* ── ALERT TUGAS MENDESAK ── */}
+          {/* ALERT TUGAS MENDESAK */}
           {!error && hasUrgentTugas && (
-            <View style={styles.alert}>
+            <View style={g.warningBox}>
               <Ionicons
                 name="alert-circle-outline"
-                size={16}
+                size={14}
                 color={Colors.warningText}
               />
-              <Text style={styles.alertText}>
+              <Text style={g.warningBoxText}>
                 Ada tugas yang mendekati deadline!
               </Text>
             </View>
           )}
 
-          {/* ── ALERT UTS / UAS ── */}
+          {/* ALERT UTS/UAS */}
           {!error && checkPembatasan && (
             <>
               {checkPembatasan.uts?.memenuhi_syarat === false && (
-                <View
-                  style={[
-                    styles.alert,
-                    {
-                      backgroundColor: Colors.dangerBg,
-                      borderColor: Colors.dangerBorder,
-                      marginBottom: 8,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="warning-outline"
-                    size={16}
-                    color={Colors.dangerText}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[styles.alertText, { color: Colors.dangerText }]}
-                    >
-                      Akses UTS dibatasi
-                    </Text>
-                    {checkPembatasan.uts?.kekurangan?.kehadiran?.length > 0 &&
-                      checkPembatasan.uts.kekurangan.kehadiran.map(
-                        (k: any, i: number) => (
-                          <Text
-                            key={i}
-                            style={{
-                              fontSize: 11,
-                              color: Colors.dangerText,
-                              marginTop: 2,
-                            }}
-                          >
-                            • {k.nama_mk}: {k.kehadiran}/{k.minimal} kehadiran
-                          </Text>
-                        ),
-                      )}
-                    {!checkPembatasan.uts?.kekurangan?.kehadiran?.length && (
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          color: Colors.dangerText,
-                          marginTop: 2,
-                        }}
-                      >
-                        • Tunggakan keuangan belum diselesaikan
-                      </Text>
-                    )}
-                  </View>
-                </View>
+                <PembatasanAlert
+                  label="Akses UTS dibatasi"
+                  data={checkPembatasan.uts}
+                />
               )}
               {checkPembatasan.uas?.memenuhi_syarat === false && (
-                <View
-                  style={[
-                    styles.alert,
-                    {
-                      backgroundColor: Colors.dangerBg,
-                      borderColor: Colors.dangerBorder,
-                      marginBottom: 8,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="warning-outline"
-                    size={16}
-                    color={Colors.dangerText}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[styles.alertText, { color: Colors.dangerText }]}
-                    >
-                      Akses UAS dibatasi
-                    </Text>
-                    {checkPembatasan.uas?.kekurangan?.kehadiran?.length > 0 &&
-                      checkPembatasan.uas.kekurangan.kehadiran.map(
-                        (k: any, i: number) => (
-                          <Text
-                            key={i}
-                            style={{
-                              fontSize: 11,
-                              color: Colors.dangerText,
-                              marginTop: 2,
-                            }}
-                          >
-                            • {k.nama_mk}: {k.kehadiran}/{k.minimal} kehadiran
-                          </Text>
-                        ),
-                      )}
-                    {!checkPembatasan.uas?.kekurangan?.kehadiran?.length && (
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          color: Colors.dangerText,
-                          marginTop: 2,
-                        }}
-                      >
-                        • Tunggakan keuangan belum diselesaikan
-                      </Text>
-                    )}
-                  </View>
-                </View>
+                <PembatasanAlert
+                  label="Akses UAS dibatasi"
+                  data={checkPembatasan.uas}
+                />
               )}
             </>
           )}
 
-          {/* ── AKSES CEPAT ── */}
+          {/* AKSES CEPAT */}
           <SectionHeader title="Akses Cepat" />
           <View style={styles.quickGrid}>
             {QUICK_MENUS.map((menu) => (
-              <QuickCard
+              <TouchableOpacity
                 key={menu.route}
-                icon={menu.icon}
-                label={menu.label}
-                sub={menu.sub}
+                style={styles.quickCard}
                 onPress={() => router.push(menu.route as any)}
-              />
+                activeOpacity={0.75}
+              >
+                <View style={g.iconWrap}>
+                  <Ionicons
+                    name={menu.icon as any}
+                    size={20}
+                    color={Colors.primary}
+                  />
+                </View>
+                <Text style={styles.quickLabel}>{menu.label}</Text>
+                <Text style={styles.quickSub} numberOfLines={1}>
+                  {menu.sub}
+                </Text>
+              </TouchableOpacity>
             ))}
           </View>
 
-          {/* ── VIDCON ── */}
+          {/* VIDCON */}
           <SectionHeader
             title="Video Conference"
             badge={hasLiveVidcon ? "Live" : undefined}
@@ -434,8 +346,8 @@ export default function Home() {
             />
           ) : (
             vidconAktif.map((v, i) => {
-              const status = getVidconStatus(v.waktu_mulai, v.waktu_selesai);
-              const isLive = status === "live";
+              const isLive =
+                getVidconStatus(v.waktu_mulai, v.waktu_selesai) === "live";
               const hasLink = !!(v.link || v.url);
               const mkNama = v.kelas_kuliah?.mata_kuliah?.nama || "";
               const mkKode = v.kelas_kuliah?.mata_kuliah?.kode || "";
@@ -443,7 +355,13 @@ export default function Home() {
                 <TouchableOpacity
                   key={i}
                   style={[
-                    styles.card,
+                    g.card,
+                    {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: 12,
+                    },
                     isLive && { borderColor: Colors.successBorder },
                   ]}
                   activeOpacity={0.75}
@@ -467,11 +385,11 @@ export default function Home() {
                       color={Colors.primary}
                     />
                   </View>
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={g.listRowTitle} numberOfLines={1}>
                       {mkNama || "-"}
                     </Text>
-                    <Text style={styles.cardSub}>{v.judul || "-"}</Text>
+                    <Text style={g.listRowSub}>{v.judul || "-"}</Text>
                     {v.waktu_mulai && (
                       <View style={styles.cardMeta}>
                         <Ionicons
@@ -535,7 +453,7 @@ export default function Home() {
             })
           )}
 
-          {/* ── TUGAS TERDEKAT ── */}
+          {/* TUGAS TERDEKAT */}
           <SectionHeader
             title="Tugas Terdekat"
             onSeeAll={() => router.push("/tugas")}
@@ -553,7 +471,18 @@ export default function Home() {
             tugasBelum.slice(0, 3).map((t, i) => {
               const deadline = getDeadlineInfo(t.waktu_selesai);
               return (
-                <View key={i} style={styles.card}>
+                <View
+                  key={i}
+                  style={[
+                    g.card,
+                    {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: 12,
+                    },
+                  ]}
+                >
                   <View style={g.iconWrap}>
                     <Ionicons
                       name="document-outline"
@@ -561,11 +490,11 @@ export default function Home() {
                       color={Colors.primary}
                     />
                   </View>
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={g.listRowTitle} numberOfLines={1}>
                       {t.judul}
                     </Text>
-                    <Text style={styles.cardSub} numberOfLines={1}>
+                    <Text style={g.listRowSub} numberOfLines={1}>
                       {t.kelas_kuliah?.mata_kuliah?.nama}
                     </Text>
                     <View style={styles.cardMeta}>
@@ -578,29 +507,27 @@ export default function Home() {
                         {t.created_by?.name || "-"}
                       </Text>
                       <Text style={g.dot}>·</Text>
-                      <Ionicons
-                        name="layers-outline"
-                        size={11}
-                        color={Colors.hint}
-                      />
                       <Text style={styles.cardMetaText}>{t.jenis_tugas}</Text>
                     </View>
                   </View>
                   {deadline && (
                     <View
-                      style={[
-                        styles.deadlineBadge,
-                        {
-                          backgroundColor: deadline.bg,
-                          borderColor: deadline.border,
-                        },
-                      ]}
+                      style={
+                        deadline.color === Colors.successText
+                          ? g.badgeSuccess
+                          : deadline.color === Colors.warningText
+                            ? g.badgeWarning
+                            : g.badgeDanger
+                      }
                     >
                       <Text
-                        style={[
-                          styles.deadlineBadgeText,
-                          { color: deadline.color },
-                        ]}
+                        style={
+                          deadline.color === Colors.successText
+                            ? g.badgeSuccessText
+                            : deadline.color === Colors.warningText
+                              ? g.badgeWarningText
+                              : g.badgeDangerText
+                        }
                       >
                         {deadline.label}
                       </Text>
@@ -611,11 +538,11 @@ export default function Home() {
             })
           )}
 
-          {/* ── JADWAL HARI INI / YANG AKAN DATANG ── */}
+          {/* JADWAL */}
           <SectionHeader
             title="Kelas Aktif & Segera"
             badge={
-              jadwalHariIni.some((k) => k.status === "berlangsung")
+              jadwal.some((k) => k.status === "berlangsung")
                 ? "Live"
                 : undefined
             }
@@ -625,13 +552,13 @@ export default function Home() {
             <SkeletonList />
           ) : error ? (
             <EmptyState icon="today-outline" label="Gagal memuat jadwal" />
-          ) : jadwalHariIni.length === 0 ? (
+          ) : jadwal.length === 0 ? (
             <EmptyState
               icon="cafe-outline"
               label="Tidak ada kelas aktif atau segera"
             />
           ) : (
-            jadwalHariIni.map((k, i) => {
+            jadwal.map((k, i) => {
               const isBerlangsung = k.status === "berlangsung";
               const j =
                 k.jadwal?.find((jd: any) => jd.hari === today) ?? k.jadwal?.[0];
@@ -644,6 +571,16 @@ export default function Home() {
                 <TouchableOpacity
                   key={i}
                   activeOpacity={0.75}
+                  style={[
+                    g.card,
+                    {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: 12,
+                    },
+                    isBerlangsung && { borderColor: Colors.successBorder },
+                  ]}
                   onPress={() =>
                     router.push({
                       pathname: "/jadwal/pertemuan-list",
@@ -654,14 +591,6 @@ export default function Home() {
                       },
                     } as any)
                   }
-                  style={[
-                    styles.card,
-                    isBerlangsung && {
-                      borderColor: Colors.successBorder,
-                      borderLeftWidth: 3,
-                      borderLeftColor: Colors.successText,
-                    },
-                  ]}
                 >
                   <View style={g.iconWrap}>
                     <Ionicons
@@ -672,8 +601,8 @@ export default function Home() {
                       }
                     />
                   </View>
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={g.listRowTitle} numberOfLines={1}>
                       {k.mata_kuliah?.nama}
                     </Text>
                     <View style={styles.cardMeta}>
@@ -707,46 +636,35 @@ export default function Home() {
                           size={11}
                           color={Colors.hint}
                         />
-                        <Text style={styles.cardMetaText} numberOfLines={1}>
-                          {`${dosenUtama.nama_pengajar}${gelar}`}
+                        <Text
+                          style={styles.cardMetaText}
+                          numberOfLines={1}
+                        >{`${dosenUtama.nama_pengajar}${gelar}`}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={{ alignItems: "flex-end", gap: 6 }}>
+                    <View
+                      style={isBerlangsung ? g.badgeSuccess : g.badgeWarning}
+                    >
+                      <Text
+                        style={
+                          isBerlangsung
+                            ? g.badgeSuccessText
+                            : g.badgeWarningText
+                        }
+                      >
+                        {isBerlangsung ? "Berlangsung" : "Segera"}
+                      </Text>
+                    </View>
+                    {k.mata_kuliah?.sks && (
+                      <View style={g.badgePrimary}>
+                        <Text style={g.badgePrimaryText}>
+                          {k.mata_kuliah.sks} SKS
                         </Text>
                       </View>
                     )}
                   </View>
-                  <View
-                    style={[
-                      styles.deadlineBadge,
-                      {
-                        backgroundColor: isBerlangsung
-                          ? Colors.successBg
-                          : Colors.warningBg,
-                        borderColor: isBerlangsung
-                          ? Colors.successBorder
-                          : Colors.warningBorder,
-                        gap: 4,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.deadlineBadgeText,
-                        {
-                          color: isBerlangsung
-                            ? Colors.successText
-                            : Colors.warningText,
-                        },
-                      ]}
-                    >
-                      {isBerlangsung ? "Berlangsung" : "Segera"}
-                    </Text>
-                  </View>
-                  {k.mata_kuliah?.sks && (
-                    <View style={g.badgePrimary}>
-                      <Text style={g.badgePrimaryText}>
-                        {k.mata_kuliah.sks} SKS
-                      </Text>
-                    </View>
-                  )}
                 </TouchableOpacity>
               );
             })
@@ -759,31 +677,25 @@ export default function Home() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function QuickCard({
-  icon,
-  label,
-  sub,
-  onPress,
-}: {
-  icon: any;
-  label: string;
-  sub: string;
-  onPress: () => void;
-}) {
+function PembatasanAlert({ label, data }: { label: string; data: any }) {
   return (
-    <TouchableOpacity
-      style={styles.quickCard}
-      onPress={onPress}
-      activeOpacity={0.75}
-    >
-      <View style={g.iconWrap}>
-        <Ionicons name={icon} size={20} color={Colors.primary} />
+    <View style={[g.errorBox, { marginBottom: 8 }]}>
+      <Ionicons name="warning-outline" size={14} color={Colors.dangerText} />
+      <View style={{ flex: 1 }}>
+        <Text style={g.errorText}>{label}</Text>
+        {data?.kekurangan?.kehadiran?.length > 0 ? (
+          data.kekurangan.kehadiran.map((k: any, i: number) => (
+            <Text key={i} style={styles.alertDangerSub}>
+              • {k.nama_mk}: {k.kehadiran}/{k.minimal} kehadiran
+            </Text>
+          ))
+        ) : (
+          <Text style={styles.alertDangerSub}>
+            • Tunggakan keuangan belum diselesaikan
+          </Text>
+        )}
       </View>
-      <Text style={styles.quickLabel}>{label}</Text>
-      <Text style={styles.quickSub} numberOfLines={1}>
-        {sub}
-      </Text>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -821,19 +733,30 @@ function SectionHeader({
 
 function EmptyState({ icon, label }: { icon: any; label: string }) {
   return (
-    <View style={styles.empty}>
+    <View style={g.empty}>
       <Ionicons name={icon} size={20} color={Colors.border} />
-      <Text style={styles.emptyText}>{label}</Text>
+      <Text style={g.emptyHint}>{label}</Text>
     </View>
   );
 }
 
-// Skeleton menyerupai shape card asli: iconWrap + dua baris teks
 function SkeletonList() {
   return (
     <>
       {[1, 2].map((i) => (
-        <View key={i} style={styles.skeletonCard}>
+        <View
+          key={i}
+          style={[
+            g.card,
+            {
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 12,
+              padding: 14,
+              marginBottom: 8,
+            },
+          ]}
+        >
           <SkeletonBlock width={34} height={34} />
           <View style={{ flex: 1, gap: 7 }}>
             <SkeletonBlock height={13} width="60%" />
@@ -845,148 +768,35 @@ function SkeletonList() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 52,
-    overflow: "hidden",
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  heroLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.5)",
-    letterSpacing: 1.2,
-    marginBottom: 4,
-  },
-  greetSub: { fontSize: 13, color: "rgba(255,255,255,0.65)" },
   greetName: {
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 18,
+    fontWeight: "700",
     color: "#fff",
-    marginTop: 2,
     letterSpacing: -0.3,
-  },
-  greetDate: { fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 },
-  uymBadge: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  uymBadgeText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: 0.5,
   },
 
   summaryStrip: {
     flexDirection: "row",
-    marginHorizontal: 16,
-    marginTop: -22,
     gap: 8,
   },
 
-  body: { paddingHorizontal: 16, paddingTop: 16 },
-
-  errorBox: {
+  retryInline: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.dangerBg,
-    borderWidth: 1,
-    borderColor: Colors.dangerBorder,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 8,
+    gap: 4,
+    marginLeft: "auto",
   },
-  errorText: {
-    fontSize: 13,
-    color: Colors.dangerText,
-    fontWeight: "600",
-    flex: 1,
-  },
+  retryInlineText: { fontSize: 12, fontWeight: "600", color: Colors.primary },
 
-  // Konsisten dengan Tugas/Jadwal/Profile
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
-
-  alert: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.warningBg,
-    borderWidth: 1,
-    borderColor: Colors.warningBorder,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 4,
-  },
-  alertText: { fontSize: 13, color: Colors.warningText, fontWeight: "600" },
+  alertDangerSub: { fontSize: 11, color: Colors.dangerText, marginTop: 2 },
 
   livePill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     backgroundColor: Colors.successBg,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.successBorder,
     borderRadius: 20,
     paddingHorizontal: 8,
@@ -1011,8 +821,8 @@ const styles = StyleSheet.create({
   quickCard: {
     width: "31%",
     backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 10,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     padding: 12,
     gap: 6,
@@ -1021,20 +831,6 @@ const styles = StyleSheet.create({
   quickLabel: { fontSize: 12, fontWeight: "700", color: Colors.text },
   quickSub: { fontSize: 10, color: Colors.muted },
 
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-    marginBottom: 8,
-    gap: 12,
-  },
-  cardContent: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: "600", color: Colors.text },
-  cardSub: { fontSize: 12, color: Colors.muted, marginTop: 2 },
   cardMeta: {
     flexDirection: "row",
     alignItems: "center",
@@ -1044,15 +840,6 @@ const styles = StyleSheet.create({
   },
   cardMetaText: { fontSize: 11, color: Colors.muted },
 
-  deadlineBadge: {
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    alignSelf: "flex-start",
-  },
-  deadlineBadgeText: { fontSize: 10, fontWeight: "700" },
-
   vidconRight: { alignItems: "flex-end", gap: 6 },
   vidconBadge: {
     flexDirection: "row",
@@ -1061,7 +848,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 0.5,
   },
   vidconLive: {
     backgroundColor: Colors.successBg,
@@ -1088,28 +875,4 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   joinBtnText: { fontSize: 11, fontWeight: "700", color: "#fff" },
-
-  // Konsisten: row layout dengan iconWrap + teks, mirip card asli
-  skeletonCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14,
-    marginBottom: 8,
-  },
-
-  empty: {
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 20,
-    alignItems: "center",
-    gap: 6,
-  },
-  emptyText: { fontSize: 13, color: Colors.muted },
 });

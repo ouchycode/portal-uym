@@ -54,12 +54,8 @@ const formatDateTime = (dateStr: string) => {
 
 const getDeadlineStatus = (waktuSelesai: string) => {
   if (!waktuSelesai) return null;
-  const now = new Date();
-  const deadline = new Date(waktuSelesai);
-  const diffMs = deadline.getTime() - now.getTime();
+  const diffMs = new Date(waktuSelesai).getTime() - Date.now();
   const diffHours = diffMs / (1000 * 60 * 60);
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
-
   if (diffMs < 0) return { label: "Sudah lewat deadline", type: "danger" };
   if (diffHours < 24)
     return {
@@ -67,10 +63,84 @@ const getDeadlineStatus = (waktuSelesai: string) => {
       type: "warning",
     };
   return {
-    label: `Tersisa ${Math.floor(diffDays)} hari lagi`,
+    label: `Tersisa ${Math.floor(diffMs / (1000 * 60 * 60 * 24))} hari lagi`,
     type: "success",
   };
 };
+
+function SectionHeader({ icon, title }: { icon: any; title: string }) {
+  return (
+    <View style={g.sectionHeader}>
+      <Ionicons name={icon} size={15} color={Colors.primary} />
+      <Text style={g.sectionTitle}>{title}</Text>
+    </View>
+  );
+}
+
+function InfoRow({ icon, label, value, badge }: any) {
+  const badgeStyle =
+    badge === "success"
+      ? {
+          bg: Colors.successBg,
+          border: Colors.successBorder,
+          text: Colors.successText,
+        }
+      : badge === "warning"
+        ? {
+            bg: Colors.warningBg,
+            border: Colors.warningBorder,
+            text: Colors.warningText,
+          }
+        : {
+            bg: Colors.primaryLight,
+            border: Colors.primaryMid,
+            text: Colors.primary,
+          };
+
+  return (
+    <View style={g.infoRow}>
+      <View style={g.iconWrap}>
+        <Ionicons name={icon} size={15} color={Colors.primary} />
+      </View>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Text style={g.infoLabel}>{label}</Text>
+        {badge ? (
+          <View
+            style={[
+              styles.inlineBadge,
+              {
+                backgroundColor: badgeStyle.bg,
+                borderColor: badgeStyle.border,
+              },
+            ]}
+          >
+            <Text style={[styles.inlineBadgeText, { color: badgeStyle.text }]}>
+              {value}
+            </Text>
+          </View>
+        ) : (
+          <Text style={g.infoValue}>{value || "-"}</Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function SkeletonRows() {
+  return (
+    <View style={{ gap: 12 }}>
+      {[1, 2, 3].map((i) => (
+        <View key={i} style={[g.infoRow, { alignItems: "center" }]}>
+          <SkeletonBlock height={32} width={32} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <SkeletonBlock height={10} width="35%" />
+            <SkeletonBlock height={13} width="60%" />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 export default function DetailTugas() {
   const { id, pertemuan, judul, periode } = useLocalSearchParams();
@@ -86,11 +156,9 @@ export default function DetailTugas() {
 
   const [uploading, setUploading] = useState(false);
   const [pengumpulan, setPengumpulan] = useState<any>(null);
-
   const [tugas, setTugas] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
   const [kelompok, setKelompok] = useState<any>(null);
   const [loadingKelompok, setLoadingKelompok] = useState(false);
   const [showKelompokModal, setShowKelompokModal] = useState(false);
@@ -101,7 +169,6 @@ export default function DetailTugas() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [adding, setAdding] = useState(false);
-
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -115,9 +182,8 @@ export default function DetailTugas() {
     setLoading(true);
     setError(false);
     try {
-      const periodeValue = periode ?? 20252;
       const res = await API.get("/v2/lms/tugas", {
-        params: { per_page: 200, periode: periodeValue },
+        params: { per_page: 200, periode: periode ?? 20252 },
       });
       const found = res.data.data.find((t: any) => String(t.id) === id);
       setTugas(found);
@@ -146,10 +212,11 @@ export default function DetailTugas() {
     try {
       const res = await API.get(`/v2/lms/tugas/${id}/pengumpulan/me`);
       setPengumpulan(res.data?.data || res.data || null);
-    } catch (err: any) {
+    } catch {
       setPengumpulan(null);
     }
   };
+
   const handleBuatKelompok = async () => {
     if (!namaKelompok.trim()) {
       Alert.alert("Perhatian", "Nama kelompok tidak boleh kosong.");
@@ -167,9 +234,10 @@ export default function DetailTugas() {
         fetchKelompok();
       }
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message || "Gagal membuat kelompok. Coba lagi.";
-      Alert.alert("Gagal", msg);
+      Alert.alert(
+        "Gagal",
+        err?.response?.data?.message || "Gagal membuat kelompok. Coba lagi.",
+      );
     } finally {
       setCreatingKelompok(false);
     }
@@ -202,24 +270,28 @@ export default function DetailTugas() {
       Alert.alert("Error", "Tidak bisa menambahkan diri sendiri.");
       return;
     }
-    const isAlready = kelompok?.anggota?.some(
-      (a: any) => a.mahasiswa?.id_user === mhs.id_user,
-    );
-    if (isAlready) {
+    if (
+      kelompok?.anggota?.some((a: any) => a.mahasiswa?.id_user === mhs.id_user)
+    ) {
       Alert.alert("Error", "Mahasiswa sudah ada di kelompok.");
       return;
     }
     setAdding(true);
     try {
-      const url = `/v2/lms/tugas/${id}/kelompok/${kelompok.id}`;
       const nim_ketua =
         kelompok?.anggota?.find((a: any) => a.jabatan === "ketua")?.mahasiswa
           ?.nim || "";
-      const list_nim_existing = kelompok?.anggota
-        ?.map((a: any) => a.mahasiswa?.nim)
-        .filter(Boolean);
-      const list_nim = [...list_nim_existing, mhs.nim];
-      await API.put(url, { nama: kelompok.nama, list_nim, nim_ketua });
+      const list_nim = [
+        ...(kelompok?.anggota
+          ?.map((a: any) => a.mahasiswa?.nim)
+          .filter(Boolean) || []),
+        mhs.nim,
+      ];
+      await API.put(`/v2/lms/tugas/${id}/kelompok/${kelompok.id}`, {
+        nama: kelompok.nama,
+        list_nim,
+        nim_ketua,
+      });
       setKelompok((prev: any) => ({
         ...prev,
         anggota: [
@@ -233,12 +305,63 @@ export default function DetailTugas() {
       setSearchResults([]);
       setTimeout(() => fetchKelompok(), 1000);
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message || "Tidak bisa menambahkan anggota";
-      Alert.alert("Gagal", `[${err?.response?.status}] ${msg}`);
+      Alert.alert(
+        "Gagal",
+        `[${err?.response?.status}] ${err?.response?.data?.message || "Tidak bisa menambahkan anggota"}`,
+      );
     } finally {
       setAdding(false);
     }
+  };
+
+  const handleRemoveAnggota = async (anggota: any) => {
+    if (!isKetua) {
+      Alert.alert("Akses ditolak", "Hanya ketua yang bisa menghapus anggota.");
+      return;
+    }
+    if (anggota.mahasiswa?.id_user === uuidFromToken) {
+      Alert.alert("Error", "Kamu tidak bisa menghapus diri sendiri.");
+      return;
+    }
+    Alert.alert("Konfirmasi", `Hapus ${anggota.mahasiswa?.nama}?`, [
+      { text: "Batal", style: "cancel" },
+      {
+        text: "Hapus",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setLoadingKelompok(true);
+            const nim_ketua =
+              kelompok?.anggota?.find((a: any) => a.jabatan === "ketua")
+                ?.mahasiswa?.nim || "";
+            const list_nim = kelompok?.anggota
+              ?.filter((a: any) => a.mahasiswa?.nim !== anggota.mahasiswa?.nim)
+              ?.map((a: any) => a.mahasiswa?.nim)
+              ?.filter(Boolean);
+            await API.put(`/v2/lms/tugas/${id}/kelompok/${kelompok.id}`, {
+              nama: kelompok.nama,
+              list_nim,
+              nim_ketua,
+            });
+            setKelompok((prev: any) => ({
+              ...prev,
+              anggota: prev.anggota.filter(
+                (a: any) => a.mahasiswa?.nim !== anggota.mahasiswa?.nim,
+              ),
+            }));
+            Alert.alert("Berhasil", "Anggota berhasil dihapus");
+            setTimeout(() => fetchKelompok(), 1000);
+          } catch (err: any) {
+            Alert.alert(
+              "Gagal",
+              err?.response?.data?.message || "Tidak bisa menghapus anggota",
+            );
+          } finally {
+            setLoadingKelompok(false);
+          }
+        },
+      },
+    ]);
   };
 
   const handleUpload = async () => {
@@ -285,58 +408,11 @@ export default function DetailTugas() {
     }
   };
 
-  const handleRemoveAnggota = async (anggota: any) => {
-    if (!isKetua) {
-      Alert.alert("Akses ditolak", "Hanya ketua yang bisa menghapus anggota.");
-      return;
-    }
-    if (anggota.mahasiswa?.id_user === uuidFromToken) {
-      Alert.alert("Error", "Kamu tidak bisa menghapus diri sendiri.");
-      return;
-    }
-    Alert.alert("Konfirmasi", `Hapus ${anggota.mahasiswa?.nama}?`, [
-      { text: "Batal", style: "cancel" },
-      {
-        text: "Hapus",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setLoadingKelompok(true);
-            const url = `/v2/lms/tugas/${id}/kelompok/${kelompok.id}`;
-            const nim_ketua =
-              kelompok?.anggota?.find((a: any) => a.jabatan === "ketua")
-                ?.mahasiswa?.nim || "";
-            const list_nim = kelompok?.anggota
-              ?.filter((a: any) => a.mahasiswa?.nim !== anggota.mahasiswa?.nim)
-              ?.map((a: any) => a.mahasiswa?.nim)
-              ?.filter(Boolean);
-            await API.put(url, { nama: kelompok.nama, list_nim, nim_ketua });
-            setKelompok((prev: any) => ({
-              ...prev,
-              anggota: prev.anggota.filter(
-                (a: any) => a.mahasiswa?.nim !== anggota.mahasiswa?.nim,
-              ),
-            }));
-            Alert.alert("Berhasil", "Anggota berhasil dihapus");
-            setTimeout(() => fetchKelompok(), 1000);
-          } catch (err: any) {
-            Alert.alert(
-              "Gagal",
-              err?.response?.data?.message || "Tidak bisa menghapus anggota",
-            );
-          } finally {
-            setLoadingKelompok(false);
-          }
-        },
-      },
-    ]);
-  };
-
   const sudah =
     Boolean(pengumpulan?.submitted_at) || tugas?.jumlah_pengumpulan > 0;
-  const rawWaktuUpload = pengumpulan?.submitted_at || null;
-
-  const waktuUpload = rawWaktuUpload ? formatDateTime(rawWaktuUpload) : null;
+  const waktuUpload = pengumpulan?.submitted_at
+    ? formatDateTime(pengumpulan.submitted_at)
+    : null;
   const deadlineStatus = getDeadlineStatus(tugas?.waktu_selesai);
   const isKelompok = tugas?.jenis_tugas === "kelompok";
   const isDeadlinePassed =
@@ -351,26 +427,48 @@ export default function DetailTugas() {
   const canUpload = !isKelompok || (isKelompok && Boolean(kelompok) && isKetua);
   const canEditKelompok = isKelompok && isKetua && !isDeadlinePassed;
 
+  const deadlineColors: Record<
+    string,
+    { bg: string; border: string; text: string; icon: any }
+  > = {
+    danger: {
+      bg: Colors.dangerBg,
+      border: Colors.dangerBorder,
+      text: Colors.dangerText,
+      icon: "close-circle-outline",
+    },
+    warning: {
+      bg: Colors.warningBg,
+      border: Colors.warningBorder,
+      text: Colors.warningText,
+      icon: "warning-outline",
+    },
+    success: {
+      bg: Colors.successBg,
+      border: Colors.successBorder,
+      text: Colors.successText,
+      icon: "checkmark-circle-outline",
+    },
+  };
+
   return (
     <SafeAreaView style={g.safeArea}>
-      {/* ── HEADER ── */}
-      <View style={styles.header}>
-        <View style={styles.decor1} />
-        <View style={styles.decor2} />
-        <View style={styles.decor3} />
-        <View style={styles.decor4} />
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={18} color="#fff" />
-          <Text style={styles.backLabel}>Kembali</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={2}>
+      {/* HEADER */}
+      <View style={g.header}>
+        <View style={g.headerTop}>
+          <TouchableOpacity
+            style={g.backBtn}
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={18} color="#fff" />
+            <Text style={g.backLabel}>Kembali</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={g.headerTitle} numberOfLines={2}>
           {judul || "Detail Tugas"}
         </Text>
-        <Text style={styles.headerSub}>
+        <Text style={g.headerSub}>
           {loading
             ? "Memuat detail..."
             : tugas?.kelas_kuliah?.mata_kuliah?.nama || "Detail Tugas"}
@@ -378,11 +476,11 @@ export default function DetailTugas() {
       </View>
 
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
+        style={{ flex: 1 }}
         contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── INFO TUGAS ── */}
+        {/* INFO TUGAS */}
         <View style={g.card}>
           <SectionHeader
             icon="information-circle-outline"
@@ -391,20 +489,17 @@ export default function DetailTugas() {
           {loading ? (
             <SkeletonRows />
           ) : error ? (
-            // Konsisten: icon size 40, emptyText, retryBtn
-            <View style={styles.inlineEmpty}>
+            <View style={g.emptyWrap}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={getDetail}>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
+              <TouchableOpacity style={g.retryBtn} onPress={getDetail}>
                 <Ionicons
                   name="refresh-outline"
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -437,12 +532,11 @@ export default function DetailTugas() {
           )}
         </View>
 
-        {/* ── KELOMPOK ── */}
+        {/* KELOMPOK */}
         {!loading && isKelompok && (
           <View style={g.card}>
             <SectionHeader icon="people-outline" title="Kelompok Saya" />
             {loadingKelompok ? (
-              // Konsisten: menyerupai shape kelompokBox
               <View style={{ gap: 10 }}>
                 <View
                   style={{
@@ -461,20 +555,32 @@ export default function DetailTugas() {
               </View>
             ) : kelompok ? (
               <>
-                <View style={styles.kelompokBox}>
+                <View
+                  style={[
+                    g.card,
+                    {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: 12,
+                      backgroundColor: Colors.primaryLight,
+                      borderColor: Colors.primaryMid,
+                    },
+                  ]}
+                >
                   <Ionicons name="people" size={18} color={Colors.primary} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.kelompokNama}>{kelompok.nama}</Text>
-                    <Text style={styles.kelompokAnggota}>
+                    <Text style={styles.kelompokSub}>
                       {kelompok.anggota?.length ?? 0} anggota
                       {isKetua ? " · Kamu adalah Ketua" : ""}
                     </Text>
                     {canEditKelompok && (
                       <TouchableOpacity
                         onPress={() => setShowTambahModal(true)}
-                        style={styles.tambahAnggotaBtn}
+                        style={styles.tambahBtn}
                       >
-                        <Text style={styles.tambahAnggotaBtnText}>
+                        <Text style={styles.tambahBtnText}>
                           + Tambah Anggota
                         </Text>
                       </TouchableOpacity>
@@ -488,7 +594,7 @@ export default function DetailTugas() {
                 </View>
 
                 {kelompok.anggota?.length > 0 && (
-                  <View style={styles.anggotaList}>
+                  <View style={{ gap: 8, marginTop: 4 }}>
                     {kelompok.anggota.map((a: any, idx: number) => {
                       const isMe = a.mahasiswa?.id_user === uuidFromToken;
                       return (
@@ -501,20 +607,19 @@ export default function DetailTugas() {
                         >
                           <View
                             style={[
-                              styles.anggotaAvatar,
-                              a.jabatan === "ketua" &&
-                                styles.anggotaAvatarKetua,
+                              styles.avatar,
+                              a.jabatan === "ketua" && styles.avatarKetua,
                             ]}
                           >
                             {a.mahasiswa?.avatar_url ? (
                               <Image
                                 source={{ uri: a.mahasiswa.avatar_url }}
-                                style={styles.anggotaAvatarImg}
+                                style={styles.avatarImg}
                               />
                             ) : (
                               <Text
                                 style={[
-                                  styles.anggotaAvatarText,
+                                  styles.avatarText,
                                   a.jabatan === "ketua" && {
                                     color: Colors.primary,
                                   },
@@ -566,7 +671,7 @@ export default function DetailTugas() {
                   Kamu belum tergabung dalam kelompok untuk tugas ini.
                 </Text>
                 <TouchableOpacity
-                  style={styles.buatKelompokBtn}
+                  style={g.btnSecondary}
                   onPress={() => setShowKelompokModal(true)}
                   activeOpacity={0.85}
                 >
@@ -575,14 +680,14 @@ export default function DetailTugas() {
                     size={16}
                     color={Colors.primary}
                   />
-                  <Text style={styles.buatKelompokText}>Buat Kelompok</Text>
+                  <Text style={g.btnSecondaryText}>Buat Kelompok</Text>
                 </TouchableOpacity>
               </>
             )}
           </View>
         )}
 
-        {/* ── WAKTU TUGAS ── */}
+        {/* WAKTU TUGAS */}
         <View style={g.card}>
           <SectionHeader icon="calendar-outline" title="Waktu Tugas" />
           {loading ? (
@@ -599,70 +704,46 @@ export default function DetailTugas() {
                 label="Deadline"
                 value={formatDateTime(tugas?.waktu_selesai)}
               />
-              {deadlineStatus && (
-                <View
-                  style={[
-                    styles.deadlineBanner,
-                    deadlineStatus.type === "danger" && {
-                      backgroundColor: Colors.dangerBg,
-                      borderColor: Colors.dangerBorder,
-                    },
-                    deadlineStatus.type === "warning" && {
-                      backgroundColor: Colors.warningBg,
-                      borderColor: Colors.warningBorder,
-                    },
-                    deadlineStatus.type === "success" && {
-                      backgroundColor: Colors.successBg,
-                      borderColor: Colors.successBorder,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={
-                      deadlineStatus.type === "danger"
-                        ? "close-circle-outline"
-                        : deadlineStatus.type === "warning"
-                          ? "warning-outline"
-                          : "checkmark-circle-outline"
-                    }
-                    size={15}
-                    color={
-                      deadlineStatus.type === "danger"
-                        ? Colors.dangerText
-                        : deadlineStatus.type === "warning"
-                          ? Colors.warningText
-                          : Colors.successText
-                    }
-                  />
-                  <Text
-                    style={[
-                      styles.deadlineBannerText,
-                      {
-                        color:
+              {deadlineStatus &&
+                (() => {
+                  const dc = deadlineColors[deadlineStatus.type];
+                  return (
+                    <View
+                      style={
+                        deadlineStatus.type === "danger"
+                          ? g.errorBox
+                          : deadlineStatus.type === "warning"
+                            ? g.warningBox
+                            : g.infoBox
+                      }
+                    >
+                      <Ionicons name={dc.icon} size={15} color={dc.text} />
+                      <Text
+                        style={
                           deadlineStatus.type === "danger"
-                            ? Colors.dangerText
+                            ? g.errorText
                             : deadlineStatus.type === "warning"
-                              ? Colors.warningText
-                              : Colors.successText,
-                      },
-                    ]}
-                  >
-                    {deadlineStatus.label}
-                  </Text>
-                </View>
-              )}
+                              ? g.warningBoxText
+                              : g.infoBoxText
+                        }
+                      >
+                        {deadlineStatus.label}
+                      </Text>
+                    </View>
+                  );
+                })()}
             </>
           )}
         </View>
 
-        {/* ── DESKRIPSI ── */}
+        {/* DESKRIPSI */}
         <View style={g.card}>
           <SectionHeader icon="document-text-outline" title="Deskripsi" />
           {loading ? (
             <View style={{ gap: 6 }}>
               <SkeletonBlock height={12} width="100%" />
               <SkeletonBlock height={12} width="80%" />
-              <SkeletonBlock height={12} width="70%" />
+              <SkeletonBlock height={12} width="65%" />
             </View>
           ) : (
             <Text style={styles.desc}>
@@ -671,14 +752,14 @@ export default function DetailTugas() {
           )}
         </View>
 
-        {/* ── FILE DOSEN ── */}
+        {/* FILE DOSEN */}
         <View style={g.card}>
           <SectionHeader icon="attach-outline" title="File Tugas dari Dosen" />
           {loading ? (
             <SkeletonBlock height={42} width="100%" />
           ) : tugas?.lampiran_file?.url ? (
             <TouchableOpacity
-              style={styles.fileBtn}
+              style={g.retryBtn}
               onPress={() => Linking.openURL(tugas.lampiran_file.url)}
               activeOpacity={0.8}
             >
@@ -687,7 +768,7 @@ export default function DetailTugas() {
                 size={16}
                 color={Colors.primary}
               />
-              <Text style={styles.fileBtnText} numberOfLines={1}>
+              <Text style={g.retryText} numberOfLines={1}>
                 {tugas.lampiran_file.name || "Download File"}
               </Text>
             </TouchableOpacity>
@@ -696,7 +777,7 @@ export default function DetailTugas() {
           )}
         </View>
 
-        {/* ── PENGUMPULAN ── */}
+        {/* PENGUMPULAN */}
         <View style={g.card}>
           <SectionHeader icon="cloud-upload-outline" title="Pengumpulan Saya" />
           {loading ? (
@@ -725,12 +806,13 @@ export default function DetailTugas() {
           )}
         </View>
 
-        {/* ── BUTTON UPLOAD ── */}
+        {/* UPLOAD BUTTON */}
         {!loading &&
           (canUpload ? (
             <TouchableOpacity
               style={[
                 g.btnPrimary,
+                { flexDirection: "row", gap: 8 },
                 (uploading || isDeadlinePassed) && { opacity: 0.5 },
               ]}
               onPress={handleUpload}
@@ -756,7 +838,7 @@ export default function DetailTugas() {
               )}
             </TouchableOpacity>
           ) : (
-            <View style={[g.infoBox, { marginTop: 4 }]}>
+            <View style={g.infoBox}>
               <Ionicons
                 name="information-circle-outline"
                 size={18}
@@ -771,7 +853,7 @@ export default function DetailTugas() {
           ))}
       </ScrollView>
 
-      {/* ── MODAL BUAT KELOMPOK ── */}
+      {/* MODAL BUAT KELOMPOK */}
       <Modal
         visible={showKelompokModal}
         transparent
@@ -814,7 +896,7 @@ export default function DetailTugas() {
         </View>
       </Modal>
 
-      {/* ── MODAL TAMBAH ANGGOTA ── */}
+      {/* MODAL TAMBAH ANGGOTA */}
       <Modal
         visible={showTambahModal}
         transparent
@@ -855,7 +937,6 @@ export default function DetailTugas() {
                   autoFocus
                 />
               </View>
-
               {loadingSearch && (
                 <ActivityIndicator
                   size="small"
@@ -870,7 +951,6 @@ export default function DetailTugas() {
                   Tidak ada mahasiswa ditemukan
                 </Text>
               )}
-
               <ScrollView
                 style={{ maxHeight: 240 }}
                 keyboardShouldPersistTaps="handled"
@@ -880,7 +960,7 @@ export default function DetailTugas() {
                   <TouchableOpacity
                     key={mhs.id_user || index}
                     onPress={() => handleTambahAnggota(mhs)}
-                    style={styles.searchResultItem}
+                    style={styles.searchItem}
                   >
                     <View style={g.iconWrap}>
                       <Ionicons
@@ -925,179 +1005,19 @@ export default function DetailTugas() {
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function SectionHeader({ icon, title }: { icon: any; title: string }) {
-  return (
-    <View style={g.sectionHeader}>
-      <Ionicons name={icon} size={15} color={Colors.primary} />
-      <Text style={g.sectionTitle}>{title}</Text>
-    </View>
-  );
-}
-
-function InfoRow({ icon, label, value, badge }: any) {
-  return (
-    <View style={g.infoRow}>
-      <View style={g.iconWrap}>
-        <Ionicons name={icon} size={15} color={Colors.primary} />
-      </View>
-      <View style={{ flex: 1, gap: 3 }}>
-        <Text style={g.infoLabel}>{label}</Text>
-        {badge ? (
-          <View
-            style={[
-              badge === "success" ? g.badgeSuccess : styles.badgeOther,
-              badge === "warning" && {
-                backgroundColor: Colors.warningBg,
-                borderColor: Colors.warningBorder,
-              },
-              badge === "info" && {
-                backgroundColor: Colors.primaryLight,
-                borderColor: Colors.primaryMid,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                g.badgeSuccessText,
-                badge === "warning" && { color: Colors.warningText },
-                badge === "info" && { color: Colors.primary },
-              ]}
-            >
-              {value}
-            </Text>
-          </View>
-        ) : (
-          <Text style={g.infoValue}>{value || "-"}</Text>
-        )}
-      </View>
-    </View>
-  );
-}
-
-// Skeleton menyerupai infoRow: iconWrap + label + value
-function SkeletonRows() {
-  return (
-    <View style={{ gap: 12 }}>
-      {[1, 2, 3].map((i) => (
-        <View key={i} style={[g.infoRow, { alignItems: "center" }]}>
-          <SkeletonBlock height={32} width={32} />
-          <View style={{ flex: 1, gap: 6 }}>
-            <SkeletonBlock height={10} width="35%" />
-            <SkeletonBlock height={13} width="60%" />
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 28,
-    overflow: "hidden",
-    gap: 4,
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+  inlineBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 14,
+    borderWidth: 0.5,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-    lineHeight: 28,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 2 },
+  inlineBadgeText: { fontSize: 11, fontWeight: "600" },
 
-  // Konsisten dengan halaman lain: icon 40, paddingVertical 56
-  inlineEmpty: { alignItems: "center", paddingVertical: 40, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-
-  // Konsisten: paddingHorizontal 16, paddingVertical 9, borderRadius 8, gap 6
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
-
-  kelompokBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    padding: 12,
-  },
   kelompokNama: { fontSize: 14, fontWeight: "700", color: Colors.primary },
-  kelompokAnggota: { fontSize: 11, color: Colors.muted, marginTop: 2 },
-  tambahAnggotaBtn: {
+  kelompokSub: { fontSize: 11, color: Colors.muted, marginTop: 2 },
+  tambahBtn: {
     marginTop: 8,
     backgroundColor: Colors.primary,
     paddingHorizontal: 12,
@@ -1105,9 +1025,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignSelf: "flex-start",
   },
-  tambahAnggotaBtnText: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  tambahBtnText: { color: "#fff", fontSize: 12, fontWeight: "600" },
 
-  anggotaList: { gap: 8, marginTop: 4 },
   anggotaItem: { flexDirection: "row", alignItems: "center", gap: 10 },
   anggotaItemMe: {
     backgroundColor: Colors.primaryLight,
@@ -1115,7 +1034,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  anggotaAvatar: {
+  avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -1124,53 +1043,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     overflow: "hidden",
   },
-  anggotaAvatarKetua: {
+  avatarKetua: {
     backgroundColor: Colors.primaryMid,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: Colors.primary,
   },
-  anggotaAvatarImg: { width: 40, height: 40, borderRadius: 20 },
-  anggotaAvatarText: { fontSize: 13, fontWeight: "700", color: Colors.primary },
+  avatarImg: { width: 40, height: 40, borderRadius: 20 },
+  avatarText: { fontSize: 13, fontWeight: "700", color: Colors.primary },
   anggotaName: { fontSize: 13, fontWeight: "600", color: Colors.text },
   anggotaNim: { fontSize: 10, color: Colors.muted, marginTop: 1 },
 
-  buatKelompokBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    alignSelf: "flex-start",
-  },
-  buatKelompokText: { fontSize: 13, fontWeight: "700", color: Colors.primary },
-
-  deadlineBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginTop: 4,
-  },
-  deadlineBannerText: { fontSize: 12, fontWeight: "600" },
-
   desc: { fontSize: 13, color: Colors.muted, lineHeight: 20 },
-  fileBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
+
   fileBtnText: {
     fontSize: 13,
     fontWeight: "600",
@@ -1178,17 +1062,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   submittedTime: { fontSize: 11, color: Colors.muted, marginTop: 2 },
-
-  badgeOther: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
 
   modalOverlay: {
     flex: 1,
@@ -1209,12 +1082,12 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 16, fontWeight: "700", color: Colors.text },
 
-  searchResultItem: {
+  searchItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     padding: 10,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderColor: Colors.border,
   },
 });

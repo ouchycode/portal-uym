@@ -64,48 +64,6 @@ const getStatus = (u: any): "aktif" | "selesai" | "belum" => {
   return "belum";
 };
 
-// ─── Skeleton: header biru + card body, identik dengan layout data ─────────────
-function DetailSkeleton() {
-  return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: Colors.bg }}
-      contentContainerStyle={{ paddingBottom: 40 }}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* header skeleton — warna biru seperti header asli */}
-      <View style={[styles.header, { gap: 10 }]}>
-        <SkeletonBlock height={32} width={80} />
-        <SkeletonBlock height={10} width="30%" />
-        <SkeletonBlock height={22} width="85%" />
-        <SkeletonBlock height={11} width="55%" />
-        <SkeletonBlock height={26} width={140} />
-      </View>
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 10 }}>
-        {/* banner skeleton */}
-        <SkeletonBlock height={56} width="100%" />
-        {/* card skeleton: struktur identik dengan card asli (stripe + body) */}
-        <View style={styles.card}>
-          <View
-            style={[
-              styles.cardStripe,
-              { backgroundColor: Colors.skeletonBase },
-            ]}
-          />
-          <View style={{ flex: 1, padding: 12, gap: 10 }}>
-            <SkeletonBlock height={14} width="40%" />
-            <View style={styles.divider} />
-            {[70, 85, 60, 75, 50, 65].map((w, i) => (
-              <SkeletonBlock key={i} height={12} width={`${w}%`} />
-            ))}
-          </View>
-        </View>
-        {/* tombol skeleton */}
-        <SkeletonBlock height={52} width="100%" />
-      </View>
-    </ScrollView>
-  );
-}
-
 export default function UjianDetail() {
   const params = useLocalSearchParams();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -139,7 +97,29 @@ export default function UjianDetail() {
   if (loading) {
     return (
       <SafeAreaView style={g.safeArea}>
-        <DetailSkeleton />
+        <View style={g.header}>
+          <View style={g.headerTop}>
+            <SkeletonBlock height={28} width={80} />
+          </View>
+          <SkeletonBlock height={20} width="70%" />
+          <SkeletonBlock height={11} width="45%" />
+        </View>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={g.body}
+          showsVerticalScrollIndicator={false}
+        >
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <View key={i} style={[g.infoRow, { alignItems: "center" }]}>
+              <SkeletonBlock height={28} width={28} />
+              <SkeletonBlock
+                height={12}
+                width={`${[60, 75, 50, 80, 65, 55][i - 1]}%`}
+              />
+            </View>
+          ))}
+          <SkeletonBlock height={52} width="100%" />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -148,15 +128,13 @@ export default function UjianDetail() {
   if (error) {
     return (
       <SafeAreaView style={g.safeArea}>
-        <View style={styles.loadingWrap}>
+        <View style={[g.emptyWrap, { flex: 1, justifyContent: "center" }]}>
           <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-          <Text style={styles.emptyText}>Gagal memuat data</Text>
-          <Text style={{ fontSize: 12, color: Colors.hint }}>
-            Periksa koneksi internet kamu
-          </Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={getDetail}>
+          <Text style={g.emptyTitle}>Gagal memuat data</Text>
+          <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
+          <TouchableOpacity style={g.retryBtn} onPress={getDetail}>
             <Ionicons name="refresh-outline" size={15} color={Colors.primary} />
-            <Text style={styles.retryText}>Coba Lagi</Text>
+            <Text style={g.retryText}>Coba Lagi</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -167,16 +145,16 @@ export default function UjianDetail() {
   if (!data) {
     return (
       <SafeAreaView style={g.safeArea}>
-        <View style={styles.loadingWrap}>
+        <View style={[g.emptyWrap, { flex: 1, justifyContent: "center" }]}>
           <Ionicons
             name="document-text-outline"
             size={40}
             color={Colors.border}
           />
-          <Text style={styles.emptyText}>Tidak ada data ujian</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={getDetail}>
+          <Text style={g.emptyTitle}>Tidak ada data ujian</Text>
+          <TouchableOpacity style={g.retryBtn} onPress={getDetail}>
             <Ionicons name="refresh-outline" size={15} color={Colors.primary} />
-            <Text style={styles.retryText}>Muat Ulang</Text>
+            <Text style={g.retryText}>Muat Ulang</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -207,64 +185,72 @@ export default function UjianDetail() {
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <View style={styles.decor4} />
+        <View style={g.header}>
+          <View style={g.headerTop}>
+            <TouchableOpacity
+              style={g.backBtn}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Text style={g.backLabel}>Kembali</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={styles.backLabel}>Kembali</Text>
-          </TouchableOpacity>
+            <View style={styles.jenisBadge}>
+              <Ionicons
+                name={JENIS_ICON[data.jenis] ?? "document-text-outline"}
+                size={11}
+                color="#fff"
+              />
+              <Text style={styles.jenisBadgeText}>
+                {data.jenis?.toUpperCase() ?? "-"}
+              </Text>
+            </View>
 
-          <View style={styles.jenisBadge}>
-            <Ionicons
-              name={JENIS_ICON[data.jenis] ?? "document-text-outline"}
-              size={11}
-              color="#fff"
-            />
-            <Text style={styles.jenisBadgeText}>
-              {data.jenis?.toUpperCase() ?? "-"}
-            </Text>
+            <View
+              style={[
+                styles.statusPill,
+                isAktif
+                  ? styles.statusPillAktif
+                  : isSelesai
+                    ? styles.statusPillSelesai
+                    : styles.statusPillBelum,
+              ]}
+            >
+              {isAktif && <View style={styles.statusDot} />}
+              <Text style={styles.statusPillText}>
+                {isAktif
+                  ? "Sedang Berlangsung"
+                  : isSelesai
+                    ? "Sesi Selesai"
+                    : "Belum Dibuka"}
+              </Text>
+            </View>
           </View>
-
-          <Text style={styles.headerTitle} numberOfLines={2}>
+          <Text style={g.headerTitle} numberOfLines={2}>
             {data.judul || "-"}
           </Text>
-          <Text style={styles.headerSub}>
+          <Text style={g.headerSub}>
             {mk?.kode ? `${mk.kode} — ${mk.nama}` : mk?.nama || "-"}
           </Text>
-
-          <View
-            style={[
-              styles.statusPill,
-              isAktif
-                ? styles.statusPillAktif
-                : isSelesai
-                  ? styles.statusPillSelesai
-                  : styles.statusPillBelum,
-            ]}
-          >
-            {isAktif && <View style={styles.statusDot} />}
-            <Text style={styles.statusPillText}>
-              {isAktif
-                ? "Sedang Berlangsung"
-                : isSelesai
-                  ? "Sesi Selesai"
-                  : "Belum Dibuka"}
-            </Text>
-          </View>
         </View>
 
-        <View style={styles.body}>
+        <View style={g.body}>
           {/* SUDAH DIKERJAKAN BANNER */}
           {sudah && (
-            <View style={styles.successBanner}>
+            <View
+              style={[
+                g.card,
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: 12,
+                  borderColor: Colors.successBorder,
+                  backgroundColor: Colors.successBg,
+                },
+              ]}
+            >
               <Ionicons
                 name="checkmark-circle"
                 size={18}
@@ -314,7 +300,7 @@ export default function UjianDetail() {
                 <Text style={styles.cardTitle}>Informasi Ujian</Text>
               </View>
 
-              <View style={styles.divider} />
+              <View style={g.divider} />
 
               {data.pertemuan?.nomor && (
                 <View style={g.infoRow}>
@@ -416,7 +402,7 @@ export default function UjianDetail() {
           {/* RIWAYAT PENGERJAAN */}
           {sudah && (
             <>
-              <Text style={styles.sectionLabel}>Riwayat Pengerjaan</Text>
+              <Text style={g.sectionLabel}>Riwayat Pengerjaan</Text>
               <View style={styles.card}>
                 <View
                   style={[
@@ -548,91 +534,6 @@ export default function UjianDetail() {
 }
 
 const styles = StyleSheet.create({
-  // ─── Empty / Error (full-screen) ─────────────────────────────────────────────
-  loadingWrap: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: Colors.bg,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
-
-  // ─── Header ──────────────────────────────────────────────────────────────────
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 36,
-    overflow: "hidden",
-    gap: 6,
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 8,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
   jenisBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -644,14 +545,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   jenisBadgeText: { fontSize: 10, fontWeight: "700", color: "#fff" },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-    lineHeight: 28,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
+
   statusPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -673,25 +567,6 @@ const styles = StyleSheet.create({
   },
   statusPillText: { fontSize: 11, color: "#fff", fontWeight: "600" },
 
-  // ─── Body ────────────────────────────────────────────────────────────────────
-  body: { paddingHorizontal: 16, paddingTop: 16, gap: 10 },
-  sectionLabel: {
-    fontSize: 12,
-    color: Colors.muted,
-    marginTop: 4,
-    marginBottom: 2,
-  },
-
-  successBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.successBg,
-    borderWidth: 1,
-    borderColor: Colors.successBorder,
-    borderRadius: 10,
-    padding: 12,
-  },
   successBannerTitle: {
     fontSize: 13,
     fontWeight: "700",
@@ -711,7 +586,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: Colors.card,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     overflow: "hidden",
   },
@@ -735,7 +610,7 @@ const styles = StyleSheet.create({
   },
   kerjakanBtnMuted: {
     backgroundColor: "#F3F4F6",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   kerjakanBtnText: { fontSize: 14, fontWeight: "700", color: "#fff" },

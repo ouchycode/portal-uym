@@ -37,12 +37,9 @@ const PER_PAGE = 10;
 
 const getDeadlineInfo = (waktuSelesai: string) => {
   if (!waktuSelesai) return null;
-  const now = new Date();
-  const deadline = new Date(waktuSelesai);
-  const diffMs = deadline.getTime() - now.getTime();
+  const diffMs = new Date(waktuSelesai).getTime() - Date.now();
   const diffHours = diffMs / (1000 * 60 * 60);
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
   if (diffMs < 0)
     return {
       label: "Terlambat",
@@ -71,11 +68,9 @@ const getDeadlineInfo = (waktuSelesai: string) => {
   };
 };
 
-const getSortPriority = (t: any): number => {
-  const sudah = t.jumlah_pengumpulan > 0;
-  if (sudah) return 10;
-  const info = getDeadlineInfo(t.waktu_selesai);
-  return info?.priority ?? 3;
+const getSortPriority = (t: any) => {
+  if (t.jumlah_pengumpulan > 0) return 10;
+  return getDeadlineInfo(t.waktu_selesai)?.priority ?? 3;
 };
 
 const formatDeadline = (dateStr: string) => {
@@ -90,27 +85,24 @@ const formatDeadline = (dateStr: string) => {
 };
 
 const TugasSkeleton = () => (
-  <View style={styles.skeletonCard}>
-    <View style={styles.skeletonStripe} />
+  <View style={styles.card}>
+    <View
+      style={[styles.cardStripe, { backgroundColor: Colors.skeletonBase }]}
+    />
     <View style={{ flex: 1, padding: 12, gap: 8 }}>
       <View style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
-        <View style={styles.skeletonIcon} />
+        <SkeletonBlock width={36} height={36} />
         <View style={{ flex: 1, gap: 6 }}>
           <SkeletonBlock height={14} width="75%" />
           <SkeletonBlock height={11} width="45%" />
         </View>
       </View>
-      <View style={{ height: 1, backgroundColor: Colors.border }} />
+      <View style={g.divider} />
       <View style={{ flexDirection: "row", gap: 6 }}>
         <SkeletonBlock height={22} width={90} />
         <SkeletonBlock height={22} width={70} />
-        <SkeletonBlock height={22} width={80} />
       </View>
-      <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-        <SkeletonBlock height={11} width="55%" />
-        <SkeletonBlock height={20} width={80} />
-      </View>
-      <SkeletonBlock height={26} width={140} />
+      <SkeletonBlock height={22} width={140} />
     </View>
   </View>
 );
@@ -133,17 +125,14 @@ export default function Tugas() {
   }, [periode]);
 
   const getTugas = async (p = 1, reset = false) => {
-    if (p === 1) setLoading(true);
-    else setLoadingMore(true);
+    p === 1 ? setLoading(true) : setLoadingMore(true);
     if (p === 1) setError(false);
-
     try {
       const res = await API.get("/v2/lms/tugas", {
         params: { page: p, per_page: PER_PAGE, periode, search: "" },
       });
       const newData: any[] = res.data.data || [];
       const total: number = res.data.meta?.total ?? newData.length;
-
       setTugas((prev) => (reset || p === 1 ? newData : [...prev, ...newData]));
       setPage(p);
       setHasMore(
@@ -158,38 +147,32 @@ export default function Tugas() {
     }
   };
 
-  const loadMore = () => {
-    if (!loadingMore && hasMore) getTugas(page + 1);
-  };
-
   const sudahCount = tugas.filter((t) => t.jumlah_pengumpulan > 0).length;
   const belumCount = tugas.filter((t) => t.jumlah_pengumpulan === 0).length;
-  const terlambatCount = tugas.filter((t) => {
-    if (t.jumlah_pengumpulan > 0) return false;
-    return getDeadlineInfo(t.waktu_selesai)?.priority === 0;
-  }).length;
-  const urgentCount = tugas.filter((t) => {
-    if (t.jumlah_pengumpulan > 0) return false;
-    return getDeadlineInfo(t.waktu_selesai)?.priority === 1;
-  }).length;
+  const terlambatCount = tugas.filter(
+    (t) =>
+      !t.jumlah_pengumpulan && getDeadlineInfo(t.waktu_selesai)?.priority === 0,
+  ).length;
+  const urgentCount = tugas.filter(
+    (t) =>
+      !t.jumlah_pengumpulan && getDeadlineInfo(t.waktu_selesai)?.priority === 1,
+  ).length;
 
   const filtered = tugas
-    .filter((t) => {
-      if (filter === "belum") return t.jumlah_pengumpulan === 0;
-      if (filter === "sudah") return t.jumlah_pengumpulan > 0;
-      return true;
-    })
+    .filter((t) =>
+      filter === "belum"
+        ? t.jumlah_pengumpulan === 0
+        : filter === "sudah"
+          ? t.jumlah_pengumpulan > 0
+          : true,
+    )
     .sort((a, b) => {
-      const pa = getSortPriority(a);
-      const pb = getSortPriority(b);
-      if (pa !== pb) return pa - pb;
-      const da = a.waktu_selesai
-        ? new Date(a.waktu_selesai).getTime()
-        : Infinity;
-      const db = b.waktu_selesai
-        ? new Date(b.waktu_selesai).getTime()
-        : Infinity;
-      return da - db;
+      const pd = getSortPriority(a) - getSortPriority(b);
+      if (pd !== 0) return pd;
+      return (
+        (a.waktu_selesai ? new Date(a.waktu_selesai).getTime() : Infinity) -
+        (b.waktu_selesai ? new Date(b.waktu_selesai).getTime() : Infinity)
+      );
     });
 
   const filterOptions = FILTERS.map((f) => ({
@@ -206,57 +189,52 @@ export default function Tugas() {
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <View style={styles.decor4} />
-          <View style={styles.topBar}>
+        <View style={g.headerSection}>
+          <View style={g.topBar}>
             <View>
-              <Text style={styles.heroLabel}>PORTAL MAHASISWA</Text>
-              <Text style={styles.heroTitle}>Daftar Tugas</Text>
+              <Text style={g.headerLabel}>PORTAL MAHASISWA</Text>
+              <Text style={g.pageTitle}>Daftar Tugas</Text>
             </View>
-            <View style={styles.uymBadge}>
-              <Text style={styles.uymBadgeText}>UYM</Text>
+            <View style={g.uymBadge}>
+              <Text style={g.uymBadgeText}>UYM</Text>
             </View>
           </View>
+
+          {/* SUMMARY STRIP */}
+          {!loading && !error && (
+            <View style={styles.summaryStrip}>
+              <SummaryCard
+                icon="checkmark-circle-outline"
+                value={sudahCount}
+                label="Sudah Kumpul"
+                valueColor={Colors.successText}
+              />
+              <SummaryCard
+                icon="time-outline"
+                value={belumCount}
+                label="Belum Kumpul"
+                valueColor={belumCount > 0 ? Colors.warningText : undefined}
+              />
+              <SummaryCard
+                icon="close-circle-outline"
+                value={terlambatCount}
+                label="Terlambat"
+                valueColor={terlambatCount > 0 ? Colors.dangerText : undefined}
+              />
+            </View>
+          )}
         </View>
 
-        {/* SUMMARY STRIP */}
-        {!loading && !error && (
-          <View style={styles.summaryStrip}>
-            <SummaryCard
-              icon="checkmark-circle-outline"
-              value={sudahCount}
-              label="Sudah Kumpul"
-              valueColor={Colors.successText}
-            />
-            <SummaryCard
-              icon="time-outline"
-              value={belumCount}
-              label="Belum Kumpul"
-              valueColor={belumCount > 0 ? Colors.warningText : undefined}
-            />
-            <SummaryCard
-              icon="close-circle-outline"
-              value={terlambatCount}
-              label="Terlambat"
-              valueColor={terlambatCount > 0 ? Colors.dangerText : undefined}
-            />
-          </View>
-        )}
-
-        {/* FILTER PERIODE */}
+        {/* PERIODE FILTER */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.periodeRow}
-          style={styles.periodeScroll}
+          style={{ marginTop: 14 }}
         >
           {PERIODE_OPTIONS.map((opt) => (
             <TouchableOpacity
@@ -285,8 +263,8 @@ export default function Tugas() {
           ))}
         </ScrollView>
 
-        {/* FILTER STATUS TABS */}
-        <View style={styles.filterWrap}>
+        {/* STATUS TABS */}
+        <View style={{ marginTop: 10, paddingHorizontal: 16 }}>
           <FilterTab
             options={filterOptions}
             active={filter}
@@ -295,71 +273,53 @@ export default function Tugas() {
         </View>
 
         {/* BODY */}
-        <View style={styles.body}>
+        <View style={g.body}>
           {/* ALERT BANNERS */}
           {!loading && !error && terlambatCount > 0 && (
-            <View
-              style={[
-                styles.alertBox,
-                {
-                  borderColor: Colors.dangerBorder,
-                  backgroundColor: Colors.dangerBg,
-                },
-              ]}
-            >
+            <View style={[g.errorBox, { marginBottom: 4 }]}>
               <Ionicons
                 name="close-circle-outline"
                 size={14}
                 color={Colors.dangerText}
               />
-              <Text style={[styles.alertText, { color: Colors.dangerText }]}>
+              <Text style={g.errorText}>
                 {terlambatCount} tugas melewati deadline
               </Text>
             </View>
           )}
           {!loading && !error && urgentCount > 0 && (
-            <View
-              style={[
-                styles.alertBox,
-                {
-                  borderColor: Colors.warningBorder,
-                  backgroundColor: Colors.warningBg,
-                },
-              ]}
-            >
+            <View style={[g.warningBox, { marginBottom: 4 }]}>
               <Ionicons
                 name="warning-outline"
                 size={14}
                 color={Colors.warningText}
               />
-              <Text style={[styles.alertText, { color: Colors.warningText }]}>
+              <Text style={g.warningBoxText}>
                 {urgentCount} tugas deadline kurang dari 24 jam
               </Text>
             </View>
           )}
 
-          <Text style={styles.sectionLabel}>
-            {loading
-              ? "Memuat tugas..."
-              : error
-                ? "Gagal memuat data"
-                : filtered.length === 0
-                  ? "Tidak ada tugas ditemukan"
-                  : `${filtered.length} tugas · diurutkan berdasarkan urgensi`}
-          </Text>
+          {/* META LABEL */}
+          {!loading && !error && (
+            <Text style={g.sectionLabel}>
+              {filtered.length === 0
+                ? "Tidak ada tugas ditemukan"
+                : `${filtered.length} tugas · diurutkan berdasarkan urgensi`}
+            </Text>
+          )}
 
           {/* SKELETON */}
-          {loading ? (
-            [1, 2, 3, 4].map((i) => <TugasSkeleton key={i} />)
-          ) : error ? (
-            <View style={styles.empty}>
+          {loading && [1, 2, 3, 4].map((i) => <TugasSkeleton key={i} />)}
+
+          {/* ERROR */}
+          {error && (
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
               <TouchableOpacity
-                style={styles.retryBtn}
+                style={g.retryBtn}
                 onPress={() => getTugas(1, true)}
               >
                 <Ionicons
@@ -367,17 +327,20 @@ export default function Tugas() {
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
-          ) : filtered.length === 0 ? (
-            <View style={styles.empty}>
+          )}
+
+          {/* EMPTY */}
+          {!loading && !error && filtered.length === 0 && (
+            <View style={g.empty}>
               <Ionicons
                 name="document-outline"
                 size={40}
                 color={Colors.border}
               />
-              <Text style={styles.emptyText}>
+              <Text style={g.emptyTitle}>
                 {filter === "belum"
                   ? "Semua tugas sudah dikumpulkan"
                   : filter === "sudah"
@@ -385,178 +348,174 @@ export default function Tugas() {
                     : "Tidak ada tugas"}
               </Text>
             </View>
-          ) : (
-            <>
-              {filtered.map((t, i) => {
-                const sudah = t.jumlah_pengumpulan > 0;
-                const deadline = getDeadlineInfo(t.waktu_selesai);
-                const isLate = !sudah && deadline?.priority === 0;
-                const isUrgent = !sudah && deadline?.priority === 1;
+          )}
 
-                return (
-                  <TouchableOpacity
-                    key={t.id ?? i}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/tugas/[id]",
-                        params: {
-                          id: String(t.id),
-                          pertemuan: t.id_pertemuan,
-                          judul: t.judul,
-                        },
-                      })
-                    }
+          {/* LIST */}
+          {!loading &&
+            !error &&
+            filtered.map((t, i) => {
+              const sudah = t.jumlah_pengumpulan > 0;
+              const deadline = getDeadlineInfo(t.waktu_selesai);
+              const isLate = !sudah && deadline?.priority === 0;
+              const isUrgent = !sudah && deadline?.priority === 1;
+              const stripeColor = sudah
+                ? Colors.successText
+                : isLate
+                  ? Colors.dangerText
+                  : isUrgent
+                    ? Colors.warningText
+                    : Colors.primary;
+              const cardBorder = sudah
+                ? Colors.successBorder
+                : isLate
+                  ? Colors.dangerBorder
+                  : isUrgent
+                    ? Colors.warningBorder
+                    : Colors.border;
+
+              return (
+                <TouchableOpacity
+                  key={t.id ?? i}
+                  style={[styles.card, { borderColor: cardBorder }]}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/tugas/[id]",
+                      params: {
+                        id: String(t.id),
+                        pertemuan: t.id_pertemuan,
+                        judul: t.judul,
+                      },
+                    })
+                  }
+                  activeOpacity={0.75}
+                >
+                  <View
                     style={[
-                      styles.card,
-                      isLate && { borderColor: Colors.dangerBorder },
-                      isUrgent && { borderColor: Colors.warningBorder },
-                      sudah && { borderColor: Colors.successBorder },
+                      styles.cardStripe,
+                      { backgroundColor: stripeColor },
                     ]}
-                    activeOpacity={0.75}
-                  >
-                    <View
-                      style={[
-                        styles.cardStripe,
-                        {
-                          backgroundColor: sudah
-                            ? Colors.successText
-                            : isLate
-                              ? Colors.dangerText
-                              : isUrgent
-                                ? Colors.warningText
-                                : Colors.primary,
-                        },
-                      ]}
-                    />
-
-                    <View style={styles.cardBody}>
-                      <View style={styles.cardTop}>
-                        <View style={g.iconWrap}>
-                          <Ionicons
-                            name="document-text-outline"
-                            size={18}
-                            color={Colors.primary}
-                          />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.cardTitle} numberOfLines={2}>
-                            {t.judul}
-                          </Text>
-                          <Text style={styles.cardMatkul} numberOfLines={1}>
-                            {t.kelas_kuliah?.mata_kuliah?.nama || "-"}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.divider} />
-
-                      <View style={styles.metaRow}>
-                        <MetaChip
-                          icon="person-outline"
-                          label={t.created_by?.name || "-"}
-                        />
-                        <MetaChip
-                          icon="layers-outline"
-                          label={t.jenis_tugas || "-"}
-                        />
-                        <MetaChip
-                          icon="git-branch-outline"
-                          label={`Pertemuan ${t.pertemuan?.nomor}`}
-                        />
-                      </View>
-
-                      {t.waktu_selesai && (
-                        <View style={styles.deadlineRow}>
-                          <Ionicons
-                            name="alarm-outline"
-                            size={12}
-                            color={Colors.hint}
-                          />
-                          <Text style={styles.deadlineText}>
-                            {`Deadline: ${formatDeadline(t.waktu_selesai)}`}
-                          </Text>
-                          {!sudah && deadline && (
-                            <View
-                              style={[
-                                styles.deadlineBadge,
-                                {
-                                  backgroundColor: deadline.bg,
-                                  borderColor: deadline.border,
-                                },
-                              ]}
-                            >
-                              <Ionicons
-                                name={deadline.icon as any}
-                                size={10}
-                                color={deadline.color}
-                              />
-                              <Text
-                                style={[
-                                  styles.deadlineBadgeText,
-                                  { color: deadline.color },
-                                ]}
-                              >
-                                {deadline.label}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                      )}
-
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          sudah ? g.badgeSuccess : styles.badgeWarning,
-                        ]}
-                      >
+                  />
+                  <View style={styles.cardBody}>
+                    {/* TOP */}
+                    <View style={styles.cardTop}>
+                      <View style={g.iconWrap}>
                         <Ionicons
-                          name={sudah ? "checkmark-circle" : "time-outline"}
-                          size={13}
-                          color={
-                            sudah ? Colors.successText : Colors.warningText
-                          }
+                          name="document-text-outline"
+                          size={18}
+                          color={Colors.primary}
                         />
-                        <Text
-                          style={[
-                            styles.statusBadgeText,
-                            {
-                              color: sudah
-                                ? Colors.successText
-                                : Colors.warningText,
-                            },
-                          ]}
-                        >
-                          {sudah ? "Sudah dikumpulkan" : "Belum dikumpulkan"}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.cardTitle} numberOfLines={2}>
+                          {t.judul}
+                        </Text>
+                        <Text style={styles.cardMatkul} numberOfLines={1}>
+                          {t.kelas_kuliah?.mata_kuliah?.nama || "-"}
                         </Text>
                       </View>
                     </View>
-                  </TouchableOpacity>
-                );
-              })}
 
-              {/* LOAD MORE */}
-              {hasMore && (
-                <TouchableOpacity
-                  style={styles.loadMoreBtn}
-                  onPress={loadMore}
-                  activeOpacity={0.75}
-                  disabled={loadingMore}
-                >
-                  {loadingMore ? (
-                    <ActivityIndicator size="small" color={Colors.primary} />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name="chevron-down-outline"
-                        size={14}
-                        color={Colors.primary}
+                    <View style={g.divider} />
+
+                    {/* META */}
+                    <View style={styles.metaRow}>
+                      <MetaChip
+                        icon="person-outline"
+                        label={t.created_by?.name || "-"}
                       />
-                      <Text style={styles.loadMoreText}>Muat lebih banyak</Text>
-                    </>
-                  )}
+                      <MetaChip
+                        icon="layers-outline"
+                        label={t.jenis_tugas || "-"}
+                      />
+                      <MetaChip
+                        icon="git-branch-outline"
+                        label={`Pertemuan ${t.pertemuan?.nomor}`}
+                      />
+                    </View>
+
+                    {/* DEADLINE */}
+                    {t.waktu_selesai && (
+                      <View style={styles.deadlineRow}>
+                        <Ionicons
+                          name="alarm-outline"
+                          size={12}
+                          color={Colors.hint}
+                        />
+                        <Text style={styles.deadlineText} numberOfLines={1}>
+                          Deadline: {formatDeadline(t.waktu_selesai)}
+                        </Text>
+                        {!sudah && deadline && (
+                          <View
+                            style={[
+                              styles.deadlineBadge,
+                              {
+                                backgroundColor: deadline.bg,
+                                borderColor: deadline.border,
+                              },
+                            ]}
+                          >
+                            <Ionicons
+                              name={deadline.icon as any}
+                              size={10}
+                              color={deadline.color}
+                            />
+                            <Text
+                              style={[
+                                styles.deadlineBadgeText,
+                                { color: deadline.color },
+                              ]}
+                            >
+                              {deadline.label}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* STATUS */}
+                    <View
+                      style={[
+                        sudah ? g.badgeSuccess : g.badgeWarning,
+                        { alignSelf: "flex-start" },
+                      ]}
+                    >
+                      <Ionicons
+                        name={sudah ? "checkmark-circle" : "time-outline"}
+                        size={13}
+                        color={sudah ? Colors.successText : Colors.warningText}
+                      />
+                      <Text
+                        style={sudah ? g.badgeSuccessText : g.badgeWarningText}
+                      >
+                        {sudah ? "Sudah dikumpulkan" : "Belum dikumpulkan"}
+                      </Text>
+                    </View>
+                  </View>
                 </TouchableOpacity>
+              );
+            })}
+
+          {/* LOAD MORE */}
+          {hasMore && (
+            <TouchableOpacity
+              style={g.retryBtn}
+              onPress={() => !loadingMore && getTugas(page + 1)}
+              activeOpacity={0.75}
+              disabled={loadingMore}
+            >
+              {loadingMore ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <>
+                  <Ionicons
+                    name="chevron-down-outline"
+                    size={14}
+                    color={Colors.primary}
+                  />
+                  <Text style={styles.loadMoreText}>Muat lebih banyak</Text>
+                </>
               )}
-            </>
+            </TouchableOpacity>
           )}
         </View>
       </ScrollView>
@@ -576,90 +535,12 @@ function MetaChip({ icon, label }: { icon: any; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 52,
-    overflow: "hidden",
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  heroLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.5)",
-    letterSpacing: 1.2,
-  },
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    marginTop: 2,
-    letterSpacing: -0.3,
-  },
-  uymBadge: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  uymBadgeText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: 0.5,
-  },
-
   summaryStrip: {
     flexDirection: "row",
-    marginHorizontal: 16,
-    marginTop: -22,
     gap: 8,
   },
 
-  periodeScroll: { marginTop: 16 },
+  // FILTERS
   periodeRow: {
     flexDirection: "row",
     gap: 8,
@@ -667,29 +548,13 @@ const styles = StyleSheet.create({
     paddingRight: 32,
   },
 
-  filterWrap: { marginTop: 12, paddingHorizontal: 16 },
-
-  body: { paddingHorizontal: 16, paddingTop: 12 },
-  sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
-
-  alertBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 8,
-  },
-  alertText: { fontSize: 12, fontWeight: "600" },
-
+  // CARD
   card: {
     flexDirection: "row",
     backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 10,
+    borderWidth: 0.5,
     borderColor: Colors.border,
-    marginBottom: 10,
     overflow: "hidden",
   },
   cardStripe: { width: 4 },
@@ -702,18 +567,17 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   cardMatkul: { fontSize: 12, color: Colors.muted, marginTop: 2 },
-  divider: { height: 1, backgroundColor: Colors.border },
 
   metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   metaChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.surface,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   metaChipText: { fontSize: 11, color: Colors.muted },
@@ -729,78 +593,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    borderWidth: 1,
-    borderRadius: 6,
+    borderWidth: 0.5,
+    borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   deadlineBadgeText: { fontSize: 10, fontWeight: "700" },
 
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  badgeWarning: {
-    backgroundColor: Colors.warningBg,
-    borderColor: Colors.warningBorder,
-  },
-  statusBadgeText: { fontSize: 11, fontWeight: "600" },
-
-  loadMoreBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card,
-    marginTop: 4,
-  },
   loadMoreText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
-
-  skeletonCard: {
-    flexDirection: "row",
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 10,
-    overflow: "hidden",
-  },
-  skeletonStripe: { width: 4, backgroundColor: Colors.skeletonBase },
-  skeletonIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: Colors.skeletonBase,
-  },
-
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

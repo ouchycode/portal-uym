@@ -140,30 +140,28 @@ export default function Vidcon() {
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
+        <View style={g.header}>
+          <View style={g.headerTop}>
+            <TouchableOpacity
+              style={g.backBtn}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Text style={g.backLabel}>Kembali</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={styles.backLabel}>Kembali</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>Video Conference</Text>
-          <Text style={styles.headerSub}>{periodeLabel}</Text>
-          {!loading && liveCount > 0 && (
-            <View style={styles.livePill}>
-              <View style={styles.liveDot} />
-              <Text style={styles.livePillText}>
-                {liveCount} sedang berlangsung
-              </Text>
-            </View>
-          )}
+            {!loading && liveCount > 0 && (
+              <View style={styles.livePill}>
+                <View style={styles.liveDot} />
+                <Text style={styles.livePillText}>
+                  {liveCount} sedang berlangsung
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text style={g.headerTitle}>Video Conference</Text>
+          <Text style={g.headerSub}>{periodeLabel}</Text>
         </View>
 
         {/* FILTER PERIODE */}
@@ -201,8 +199,8 @@ export default function Vidcon() {
         </ScrollView>
 
         {/* BODY */}
-        <View style={styles.body}>
-          <Text style={styles.sectionLabel}>
+        <View style={g.body}>
+          <Text style={g.sectionLabel}>
             {loading
               ? "Memuat vidcon..."
               : error
@@ -217,33 +215,29 @@ export default function Vidcon() {
             [1, 2, 3].map((i) => <VidconSkeleton key={i} />)
           ) : error ? (
             /* ── ERROR STATE ── */
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={getVidcon}>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
+              <TouchableOpacity style={g.retryBtn} onPress={getVidcon}>
                 <Ionicons
                   name="refresh-outline"
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           ) : data.length === 0 ? (
             /* ── EMPTY STATE ── */
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons
                 name="videocam-off-outline"
                 size={40}
                 color={Colors.border}
               />
-              <Text style={styles.emptyText}>Tidak ada vidcon</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                untuk periode {periodeLabel}
-              </Text>
+              <Text style={g.emptyTitle}>Tidak ada vidcon</Text>
+              <Text style={g.emptyHint}>untuk periode {periodeLabel}</Text>
             </View>
           ) : (
             /* ── DATA ── */
@@ -289,27 +283,23 @@ export default function Vidcon() {
                         />
                       </View>
                       <View
-                        style={[
-                          styles.statusBadge,
+                        style={
                           isLive
-                            ? styles.statusLive
+                            ? g.badgeSuccess
                             : isSelesai
-                              ? styles.statusSelesai
-                              : styles.statusPending,
-                        ]}
+                              ? g.badgeSlate
+                              : g.badgeWarning
+                        }
                       >
                         {isLive && <View style={styles.statusDot} />}
                         <Text
-                          style={[
-                            styles.statusText,
-                            {
-                              color: isLive
-                                ? Colors.successText
-                                : isSelesai
-                                  ? Colors.muted
-                                  : Colors.warningText,
-                            },
-                          ]}
+                          style={
+                            isLive
+                              ? g.badgeSuccessText
+                              : isSelesai
+                                ? g.badgeSlateText
+                                : g.badgeWarningText
+                          }
                         >
                           {isLive
                             ? "Live"
@@ -324,7 +314,7 @@ export default function Vidcon() {
                       {mk?.kode ? `${mk.kode} — ${mk.nama}` : mk?.nama || "-"}
                     </Text>
 
-                    <View style={styles.divider} />
+                    <View style={[g.divider, { marginVertical: 2 }]} />
 
                     <View style={g.infoRow}>
                       <Ionicons
@@ -364,7 +354,7 @@ export default function Vidcon() {
 
                     <View style={styles.btnRow}>
                       <TouchableOpacity
-                        style={styles.detailBtn}
+                        style={g.retryBtn}
                         onPress={() => goToDetail(v.id_pertemuan, v)}
                         activeOpacity={0.75}
                       >
@@ -373,7 +363,7 @@ export default function Vidcon() {
                           size={14}
                           color={Colors.primary}
                         />
-                        <Text style={styles.detailBtnText}>Detail</Text>
+                        <Text style={g.retryText}>Detail</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -412,55 +402,6 @@ export default function Vidcon() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 36,
-    overflow: "hidden",
-    gap: 4,
-  },
-  decor1: {
-    position: "absolute",
-    top: -28,
-    right: -28,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.05)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 10,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#fff" },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.6)" },
   livePill: {
     flexDirection: "row",
     alignItems: "center",
@@ -483,15 +424,11 @@ const styles = StyleSheet.create({
     paddingRight: 32,
   },
 
-  body: { paddingHorizontal: 16, paddingTop: 12 },
-  sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
-
-  // ─── Card ───────────────────────────────────────────────────────────────────
   card: {
     flexDirection: "row",
     backgroundColor: Colors.card,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     marginBottom: 10,
     overflow: "hidden",
@@ -509,7 +446,6 @@ const styles = StyleSheet.create({
     color: Colors.text,
     lineHeight: 20,
   },
-  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 2 },
   infoText: { fontSize: 12, color: Colors.muted, flex: 1 },
   statusBadge: {
     flexDirection: "row",
@@ -518,7 +454,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 0.5,
   },
   statusLive: {
     backgroundColor: Colors.successBg,
@@ -537,18 +473,7 @@ const styles = StyleSheet.create({
   },
   statusText: { fontSize: 10, fontWeight: "700" },
   btnRow: { flexDirection: "row", gap: 8, marginTop: 4 },
-  detailBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-  },
-  detailBtnText: { fontSize: 12, fontWeight: "600", color: Colors.primary },
+
   joinBtn: {
     flex: 1,
     flexDirection: "row",
@@ -561,17 +486,16 @@ const styles = StyleSheet.create({
   },
   joinBtnMuted: {
     backgroundColor: "#F3F4F6",
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
   },
   joinBtnText: { fontSize: 13, fontWeight: "700", color: "#fff" },
 
-  // ─── Skeleton ────────────────────────────────────────────────────────────────
   skeletonCard: {
-    flexDirection: "row", // sama seperti card asli
+    flexDirection: "row",
     backgroundColor: Colors.card,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: Colors.border,
     marginBottom: 10,
     overflow: "hidden",
@@ -596,26 +520,4 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
-
-  // ─── Empty / Error ───────────────────────────────────────────────────────────
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

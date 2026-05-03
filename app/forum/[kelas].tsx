@@ -14,9 +14,10 @@ import {
   View,
 } from "react-native";
 
-// ─── Skeleton: row identik dengan card asli (icon + konten + chevron) ─────────
 const ForumKelasSkeleton = () => (
-  <View style={styles.skeletonCard}>
+  <View
+    style={[g.card, { flexDirection: "row", alignItems: "center", gap: 12 }]}
+  >
     <View style={styles.skeletonIcon} />
     <View style={{ flex: 1, gap: 6 }}>
       <SkeletonBlock height={11} width="30%" />
@@ -69,22 +70,19 @@ export default function ForumKelas() {
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.decor1} />
-          <View style={styles.decor2} />
-          <View style={styles.decor3} />
-          <View style={styles.decor4} />
-
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={18} color="#fff" />
-            <Text style={styles.backLabel}>Kembali</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{mkNama || "Forum Diskusi"}</Text>
-          <Text style={styles.headerSub}>
+        <View style={g.header}>
+          <View style={g.headerTop}>
+            <TouchableOpacity
+              style={g.backBtn}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={18} color="#fff" />
+              <Text style={g.backLabel}>Kembali</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={g.headerTitle}>{mkNama || "Forum Diskusi"}</Text>
+          <Text style={g.headerSub}>
             {loading
               ? "Memuat forum..."
               : error
@@ -94,8 +92,8 @@ export default function ForumKelas() {
         </View>
 
         {/* BODY */}
-        <View style={styles.body}>
-          <Text style={styles.sectionLabel}>
+        <View style={g.body}>
+          <Text style={g.sectionLabel}>
             {loading
               ? "Memuat topik..."
               : error
@@ -110,37 +108,38 @@ export default function ForumKelas() {
             [1, 2, 3].map((i) => <ForumKelasSkeleton key={i} />)
           ) : error ? (
             /* ── ERROR STATE ── */
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={styles.emptyText}>Gagal memuat data</Text>
-              <Text style={{ fontSize: 12, color: Colors.hint }}>
-                Periksa koneksi internet kamu
-              </Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={getForum}>
+              <Text style={g.emptyTitle}>Gagal memuat data</Text>
+              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
+              <TouchableOpacity style={g.retryBtn} onPress={getForum}>
                 <Ionicons
                   name="refresh-outline"
                   size={15}
                   color={Colors.primary}
                 />
-                <Text style={styles.retryText}>Coba Lagi</Text>
+                <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
           ) : forum.length === 0 ? (
             /* ── EMPTY STATE ── */
-            <View style={styles.empty}>
+            <View style={g.empty}>
               <Ionicons
                 name="chatbubbles-outline"
                 size={40}
                 color={Colors.border}
               />
-              <Text style={styles.emptyText}>Belum ada forum di kelas ini</Text>
+              <Text style={g.emptyTitle}>Belum ada forum di kelas ini</Text>
             </View>
           ) : (
             /* ── DATA ── */
             forum.map((f) => (
               <TouchableOpacity
                 key={f.id}
-                style={styles.card}
+                style={[
+                  g.card,
+                  { flexDirection: "row", alignItems: "center", gap: 12 },
+                ]}
                 activeOpacity={0.75}
                 onPress={() => {
                   if (!f.id) return;
@@ -154,11 +153,11 @@ export default function ForumKelas() {
                     color={Colors.primary}
                   />
                 </View>
-                <View style={styles.cardContent}>
-                  <Text style={styles.meetingLabel}>
+                <View style={{ flex: 1 }}>
+                  <Text style={g.listRowSub}>
                     Pertemuan {f.nomor_pertemuan}
                   </Text>
-                  <Text style={styles.cardTitle} numberOfLines={2}>
+                  <Text style={g.listRowTitle} numberOfLines={2}>
                     {f.judul}
                   </Text>
                 </View>
@@ -177,132 +176,10 @@ export default function ForumKelas() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 36,
-    overflow: "hidden",
-    gap: 4,
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -40,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 16,
-    right: 90,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 14,
-  },
-  backLabel: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.3,
-  },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
-
-  body: { paddingHorizontal: 16, paddingTop: 16 },
-  sectionLabel: { fontSize: 12, color: Colors.muted, marginBottom: 10 },
-
-  // ─── Card ────────────────────────────────────────────────────────────────────
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-    marginBottom: 8,
-    gap: 12,
-  },
-  cardContent: { flex: 1 },
-  meetingLabel: {
-    fontSize: 11,
-    color: Colors.muted,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  cardTitle: { fontSize: 14, fontWeight: "600", color: Colors.text },
-
-  // ─── Skeleton ────────────────────────────────────────────────────────────────
-  skeletonCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-    marginBottom: 8,
-    gap: 12,
-  },
   skeletonIcon: {
     width: 36,
     height: 36,
     borderRadius: 8,
     backgroundColor: Colors.skeletonBase,
   },
-
-  // ─── Empty / Error ───────────────────────────────────────────────────────────
-  empty: { alignItems: "center", paddingVertical: 56, gap: 8 },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.muted,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primaryMid,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  retryText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
 });

@@ -8,6 +8,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -56,10 +57,7 @@ export default function Login() {
       const profileRes = await fetch(
         `https://mahasiswa.lms.uym.ac.id/v1/mahasiswa/${username}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "college-id": "041105",
-          },
+          headers: { Authorization: `Bearer ${token}`, "college-id": "041105" },
         },
       );
       const profileData = await profileRes.json();
@@ -74,16 +72,15 @@ export default function Login() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.root}
+      style={g.safeArea}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View style={styles.decor1} />
-        <View style={styles.decor2} />
-        <View style={styles.decor3} />
-        <View style={styles.decor4} />
-
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* BRAND */}
         <View style={styles.brand}>
           <View style={styles.logoBox}>
             <Image
@@ -92,113 +89,104 @@ export default function Login() {
               resizeMode="contain"
             />
           </View>
-          <View>
-            <Text style={styles.uniName}>Universitas Yatsi Madani</Text>
-            <Text style={styles.lmsLabel}>Sistem Informasi Akademik</Text>
-          </View>
-        </View>
-
-        <View style={styles.portalBadge}>
-          <Text style={styles.portalBadgeText}>PORTAL MAHASISWA</Text>
-        </View>
-        <Text style={styles.greeting}>Selamat datang{"\n"}kembali 👋</Text>
-        <Text style={styles.greetingSub}>Masuk dengan akun SIAKAD Anda</Text>
-      </View>
-      {/* CARD FORM */}
-      <View style={styles.card}>
-        {/* NIM */}
-        <View>
-          <Text style={g.inputLabel}>NIM</Text>
-          <View style={[g.inputWrap, { height: 48 }]}>
-            <Feather name="file-text" size={16} color={Colors.hint} />
-            <TextInput
-              style={g.inputField}
-              placeholder="Nomor Induk Mahasiswa"
-              placeholderTextColor={Colors.hint}
-              keyboardType="numeric"
-              autoCapitalize="none"
-              onChangeText={(v) => {
-                setUsername(v);
-                setError("");
-              }}
-              value={username}
-            />
-          </View>
-        </View>
-
-        {/* PASSWORD */}
-        <View style={{ marginTop: 14 }}>
-          <View style={styles.labelRow}>
-            <Text style={g.inputLabel}>Password</Text>
-          </View>
-          <View style={[g.inputWrap, { height: 48 }]}>
-            <Feather name="lock" size={16} color={Colors.hint} />
-            <TextInput
-              style={g.inputField}
-              placeholder="Kata sandi"
-              placeholderTextColor={Colors.hint}
-              secureTextEntry={!showPass}
-              onChangeText={(v) => {
-                setPassword(v);
-                setError("");
-              }}
-              value={password}
-            />
-            <TouchableOpacity onPress={() => setShowPass((p) => !p)}>
-              <Feather
-                name={showPass ? "eye-off" : "eye"}
-                size={16}
-                color={Colors.hint}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ERROR */}
-        {error ? (
-          <View style={g.errorBox}>
-            <Feather name="alert-circle" size={14} color={Colors.error} />
-            <Text style={g.errorText}>{error}</Text>
-          </View>
-        ) : null}
-
-        {/* Login Button */}
-        <TouchableOpacity
-          style={[styles.loginBtn, loading && { opacity: 0.7 }]}
-          onPress={handleLogin}
-          disabled={loading}
-          activeOpacity={0.85}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Text style={g.btnPrimaryText}>Masuk ke SIAKAD</Text>
-              <Feather name="arrow-right" size={16} color="#fff" />
-            </>
-          )}
-        </TouchableOpacity>
-
-        {/* INFO BOX */}
-        <View style={g.infoBox}>
-          <Feather
-            name="info"
-            size={13}
-            color={Colors.primary}
-            style={{ marginTop: 1 }}
-          />
-          <Text style={g.infoBoxText}>
-            Gunakan NIM dan password{" "}
-            <Text style={{ fontWeight: "700" }}>SIAKAD</Text> yang sama. Hubungi
-            BAA jika mengalami kendala login.
+          <Text style={styles.uniName}>Universitas Yatsi Madani</Text>
+          <Text style={[g.pageSubtitle, { color: Colors.muted }]}>
+            Sistem Informasi Akademik
           </Text>
         </View>
 
-        {/* QUICK LINK */}
+        {/* FORM */}
+        <View style={g.card}>
+          <Text style={[g.pageTitle, { color: Colors.primary }]}>
+            Masuk ke Akun
+          </Text>
+          {/* NIM */}
+          <View>
+            <Text style={g.inputLabel}>NIM</Text>
+            <View style={g.inputWrap}>
+              <Feather name="user" size={15} color={Colors.hint} />
+              <TextInput
+                style={g.inputField}
+                placeholder="Nomor Induk Mahasiswa"
+                placeholderTextColor={Colors.hint}
+                keyboardType="numeric"
+                autoCapitalize="none"
+                onChangeText={(v) => {
+                  setUsername(v);
+                  setError("");
+                }}
+                value={username}
+              />
+            </View>
+          </View>
+
+          {/* PASSWORD */}
+          <View>
+            <Text style={g.inputLabel}>Password</Text>
+            <View style={g.inputWrap}>
+              <Feather name="lock" size={15} color={Colors.hint} />
+              <TextInput
+                style={g.inputField}
+                placeholder="Kata sandi"
+                placeholderTextColor={Colors.hint}
+                secureTextEntry={!showPass}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  setError("");
+                }}
+                value={password}
+              />
+              <TouchableOpacity onPress={() => setShowPass((p) => !p)}>
+                <Feather
+                  name={showPass ? "eye-off" : "eye"}
+                  size={15}
+                  color={Colors.hint}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* ERROR */}
+          {error ? (
+            <View style={g.errorBox}>
+              <Feather name="alert-circle" size={13} color={Colors.error} />
+              <Text style={g.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
+          {/* SUBMIT */}
+          <TouchableOpacity
+            style={[g.btnPrimary, loading && { opacity: 0.65 }]}
+            onPress={handleLogin}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={g.btnPrimaryText}>Masuk</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* INFO */}
+          <View style={g.infoBox}>
+            <Feather
+              name="info"
+              size={13}
+              color={Colors.primary}
+              style={{ marginTop: 1 }}
+            />
+            <Text style={g.infoBoxText}>
+              Hubungi BAA jika mengalami kendala login.
+            </Text>
+          </View>
+        </View>
+
+        {/* HELP */}
         <View style={g.quickLinkRow}>
           <TouchableOpacity style={g.quickLinkCard} activeOpacity={0.7}>
             <View style={g.iconWrap}>
-              <Feather name="message-circle" size={16} color={Colors.primary} />
+              <Feather name="message-circle" size={15} color={Colors.primary} />
             </View>
             <View>
               <Text style={g.quickLinkTitle}>Helpdesk</Text>
@@ -207,7 +195,7 @@ export default function Login() {
           </TouchableOpacity>
           <TouchableOpacity style={g.quickLinkCard} activeOpacity={0.7}>
             <View style={g.iconWrap}>
-              <Feather name="mail" size={16} color={Colors.primary} />
+              <Feather name="mail" size={15} color={Colors.primary} />
             </View>
             <View>
               <Text style={g.quickLinkTitle}>Email BAA</Text>
@@ -217,139 +205,44 @@ export default function Login() {
         </View>
 
         <Text style={g.footer}>
-          © {new Date().getFullYear()} UYM · KEVIN ARDIANSYAH
+          © {new Date().getFullYear()} Universitas Yatsi Madani
         </Text>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.bg },
-  header: {
-    backgroundColor: Colors.primary,
+  scroll: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 56,
-    paddingBottom: 56,
-    overflow: "hidden",
-  },
-  decor1: {
-    position: "absolute",
-    top: -30,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decor2: {
-    position: "absolute",
-    bottom: -50,
-    left: -30,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  decor3: {
-    position: "absolute",
-    top: 30,
-    right: 32,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.09)",
-  },
-  decor4: {
-    position: "absolute",
-    bottom: 24,
-    right: 80,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "rgba(255,255,255,0.07)",
+    paddingTop: 72,
+    paddingBottom: 40,
+    backgroundColor: Colors.bg,
   },
   brand: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 12,
     marginBottom: 28,
   },
   logoBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: Colors.primary,
-    letterSpacing: -0.5,
-  },
-  uniName: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#fff",
-    letterSpacing: 0.3,
-  },
-  lmsLabel: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 2 },
-  portalBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginBottom: 14,
-  },
-  portalBadgeText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.85)",
-    letterSpacing: 1,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#fff",
-    lineHeight: 30,
-    letterSpacing: -0.5,
-  },
-  greetingSub: { fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 6 },
-  card: {
-    flex: 1,
+    width: 80,
+    height: 80,
+    borderRadius: 16,
     backgroundColor: Colors.card,
-    borderRadius: 24,
-    marginTop: -20,
-    paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 32,
-  },
-  labelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  forgotText: { fontSize: 12, color: Colors.primary, fontWeight: "600" },
-  loginBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    paddingVertical: 15,
-    flexDirection: "row",
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    marginTop: 20,
+    marginBottom: 12,
   },
   logo: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: "#fff",
+    width: 60,
+    height: 60,
+  },
+  uniName: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 2,
   },
 });
