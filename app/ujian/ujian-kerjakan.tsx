@@ -26,6 +26,7 @@ interface Pilihan {
 
 interface Soal {
   id: string;
+  kelompok_soal_id: string;
   jenis: "pilihan" | "esay";
   pertanyaan: string;
   soal_files: any[];
@@ -131,12 +132,16 @@ export default function UjianKerjakan() {
         API.get("/v2/lms/check_pembatasan"),
       ]);
       const data = ujianRes.data.data || ujianRes.data;
+      console.log("kelompok_soal:", data.kelompok_soal); // ← tambah ini
+
       setUjian(data);
       setPembatasan(pembatasanRes.data?.data || null);
 
       const soalList: Soal[] = [];
       (data.kelompok_soal || []).forEach((kg: KelompokSoal) => {
-        (kg.soal || []).forEach((s) => soalList.push(s));
+        (kg.soal || []).forEach((s) =>
+          soalList.push({ ...s, kelompok_soal_id: kg.id }),
+        );
       });
       setAllSoal(soalList);
 
@@ -150,7 +155,30 @@ export default function UjianKerjakan() {
     }
   };
 
-  const mulaiUjian = () => {
+  const mulaiUjian = async () => {
+    try {
+      const res = await API.post(`/v2/lms/ujian/${id}/pengerjaan/start`, {});
+      const data = res.data.data || res.data;
+
+      // load soal dari response start
+      const soalList: Soal[] = [];
+      (data.kelompok_soal || []).forEach((kg: KelompokSoal) => {
+        (kg.soal || []).forEach((s) =>
+          soalList.push({ ...s, kelompok_soal_id: kg.id }),
+        );
+      });
+      setAllSoal(soalList);
+
+      // update timer jika ada durasi dari response
+      if (data.durasi) {
+        setTimerDetik(data.durasi * 60);
+      }
+    } catch (e) {
+      console.warn("Gagal start ujian:", e);
+      Alert.alert("Gagal", "Tidak dapat memulai ujian. Coba lagi.");
+      return;
+    }
+
     setStarted(true);
     if (ujian?.gunakan_batas_waktu && ujian?.durasi) {
       timerRef.current = setInterval(() => {
@@ -166,15 +194,38 @@ export default function UjianKerjakan() {
     }
   };
 
-  const handleJawab = (idSoal: string, jawab: string) => {
-    setJawaban((prev) => ({ ...prev, [idSoal]: jawab }));
+  const handleJawab = async (soal: Soal, pilihan: number) => {
+    console.log("idx dipilih:", pilihan - 1, "| dikirim ke server:", pilihan);
+    setJawaban((prev) => ({ ...prev, [soal.id]: String(pilihan) }));
+    try {
+      await API.patch(
+        `/v2/lms/ujian/${id}/pengerjaan/kelompok_soal/${soal.kelompok_soal_id}/soal/${soal.id}`,
+        { ditandai: false, pilihan },
+      );
+    } catch (e) {
+      console.warn("Gagal kirim jawaban:", e);
+    }
   };
 
   const handleSubmit = async (autoSubmit = false) => {
     if (timerRef.current) clearInterval(timerRef.current);
+    try {
+      await API.post(`/v2/lms/ujian/${id}/pengerjaan/finish`, {});
+    } catch (e) {
+      console.warn("Gagal submit:", e);
+    }
+
+    // refresh data dari server supaya waktu_selesai_pengerjaan terupdate
+    try {
+      const ujianRes = await API.get(`/v2/lms/ujian/${id}`);
+      const data = ujianRes.data.data || ujianRes.data;
+      setUjian(data);
+    } catch (e) {
+      console.warn("Gagal refresh ujian:", e);
+    }
+
     setSelesai(true);
     setShowConfirmSubmit(false);
-    console.log("📤 SUBMIT JAWABAN:", jawaban);
     if (autoSubmit) {
       Alert.alert(
         "Waktu Habis",
@@ -456,6 +507,10 @@ export default function UjianKerjakan() {
                 (jenis.includes("uas") &&
                   pembatasan?.uas?.memenuhi_syarat === false);
 
+              const sudahDikerjakan =
+                ujian.waktu_selesai_pengerjaan !== null || selesai;
+              const ujianDitutup = ujian.status === "selesai";
+
               return isBlokir ? (
                 <View style={g.warningBox}>
                   <Ionicons
@@ -468,6 +523,32 @@ export default function UjianKerjakan() {
                   >
                     Akses ujian diblokir karena tunggakan keuangan. Hubungi
                     bagian keuangan kampus.
+                  </Text>
+                </View>
+              ) : ujianDitutup ? (
+                <View style={g.warningBox}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={16}
+                    color={Colors.dangerText}
+                  />
+                  <Text
+                    style={[g.warningBoxText, { color: Colors.dangerText }]}
+                  >
+                    Ujian sudah ditutup oleh dosen.
+                  </Text>
+                </View>
+              ) : sudahDikerjakan ? (
+                <View style={g.warningBox}>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={16}
+                    color={Colors.successText}
+                  />
+                  <Text
+                    style={[g.warningBoxText, { color: Colors.successText }]}
+                  >
+                    Kamu sudah mengerjakan ujian ini.
                   </Text>
                 </View>
               ) : (
@@ -606,7 +687,7 @@ export default function UjianKerjakan() {
         {isPilihan ? (
           <View style={styles.pilihanWrap}>
             {soalSekarang.pilihan.pilihan.map((p, idx) => {
-              const isSelected = jawabanSekarang === p;
+              const isSelected = jawabanSekarang === String(idx + 1);
               return (
                 <TouchableOpacity
                   key={idx}
@@ -614,7 +695,7 @@ export default function UjianKerjakan() {
                     styles.pilihanItem,
                     isSelected && styles.pilihanSelected,
                   ]}
-                  onPress={() => handleJawab(soalSekarang.id, p)}
+                  onPress={() => handleJawab(soalSekarang, idx + 1)}
                   activeOpacity={0.75}
                 >
                   <View
@@ -656,7 +737,9 @@ export default function UjianKerjakan() {
             numberOfLines={6}
             textAlignVertical="top"
             value={jawabanSekarang ?? ""}
-            onChangeText={(t) => handleJawab(soalSekarang.id, t)}
+            onChangeText={(t) =>
+              setJawaban((prev) => ({ ...prev, [soalSekarang.id]: t }))
+            }
           />
         )}
       </ScrollView>

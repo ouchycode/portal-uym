@@ -2,8 +2,9 @@ import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+
 import {
   ScrollView,
   StyleSheet,
@@ -75,10 +76,15 @@ export default function UjianDetail() {
   useEffect(() => {
     if (!id || id === "index") {
       setLoading(false);
-      return;
     }
-    getDetail();
   }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!id || id === "index") return;
+      getDetail();
+    }, [id]),
+  );
 
   const getDetail = async () => {
     setLoading(true);
@@ -164,7 +170,7 @@ export default function UjianDetail() {
   const status = getStatus(data);
   const isAktif = status === "aktif";
   const isSelesai = status === "selesai";
-  const sudah = data.jumlah_pengerjaan > 0;
+  const sudah = data.waktu_selesai_pengerjaan !== null;
   const mk = data.kelas_kuliah?.mata_kuliah;
   const kelas = data.kelas_kuliah?.kelas;
 
@@ -499,10 +505,11 @@ export default function UjianDetail() {
             disabled={isSelesai || sudah || !isAktif}
             onPress={
               isAktif && !sudah
-                ? () => {
-                    // TODO: navigasi ke halaman pengerjaan ujian
-                    // router.push({ pathname: "/ujian/kerjakan/[id]", params: { id } })
-                  }
+                ? () =>
+                    router.push({
+                      pathname: "/ujian/ujian-kerjakan",
+                      params: { id },
+                    })
                 : undefined
             }
             activeOpacity={0.8}
