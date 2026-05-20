@@ -2,26 +2,27 @@ import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
 const ForumKelasSkeleton = () => (
-  <View
-    style={[g.card, { flexDirection: "row", alignItems: "center", gap: 12 }]}
-  >
+  <View style={g.listRow}>
     <View style={styles.skeletonIcon} />
-    <View style={{ flex: 1, gap: 6 }}>
-      <SkeletonBlock height={11} width="30%" />
-      <SkeletonBlock height={14} width="70%" />
+    <View style={styles.skeletonBody}>
+      <SkeletonBlock height={14} width="60%" />
+      <SkeletonBlock height={11} width="40%" />
     </View>
     <SkeletonBlock height={16} width={16} />
   </View>
@@ -37,10 +38,7 @@ export default function ForumKelas() {
   const [forum, setForum] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
-  useEffect(() => {
-    if (kelas) getForum();
-  }, [kelas]);
+  const [search, setSearch] = useState("");
 
   const getForum = async () => {
     setLoading(true);
@@ -62,12 +60,25 @@ export default function ForumKelas() {
     }
   };
 
+  const forumFiltered = search
+    ? forum.filter((f) =>
+        f.judul?.toLowerCase().includes(search.toLowerCase()),
+      )
+    : forum;
+
+  useEffect(() => {
+    if (kelas) getForum();
+  }, [kelas]);
+
+  const { refreshing, onRefresh } = useRefresh(getForum);
+
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={styles.scrollBg}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
         <View style={g.header}>
@@ -87,7 +98,7 @@ export default function ForumKelas() {
               ? "Memuat forum..."
               : error
                 ? "Gagal memuat data"
-                : `${forum.length} topik ditemukan`}
+                : `${forumFiltered.length} topik ditemukan`}
           </Text>
         </View>
 
@@ -98,9 +109,9 @@ export default function ForumKelas() {
               ? "Memuat topik..."
               : error
                 ? "Gagal memuat data"
-                : forum.length === 0
+                : forumFiltered.length === 0
                   ? "Belum ada forum di kelas ini"
-                  : `${forum.length} topik · urut per pertemuan`}
+                  : `${forumFiltered.length}${search ? `/${forum.length}` : ""} topik · urut per pertemuan`}
           </Text>
 
           {/* ── SKELETON ── */}
@@ -121,7 +132,35 @@ export default function ForumKelas() {
                 <Text style={g.retryText}>Coba Lagi</Text>
               </TouchableOpacity>
             </View>
-          ) : forum.length === 0 ? (
+          ) : null}
+
+          {!loading && !error && forum.length > 0 && (
+            /* SEARCH BAR */
+            <View style={styles.searchWrap}>
+              <Ionicons name="search-outline" size={15} color={Colors.hint} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Cari forum..."
+                placeholderTextColor={Colors.hint}
+                value={search}
+                onChangeText={setSearch}
+                returnKeyType="search"
+              />
+              {search.length > 0 && (
+                <TouchableOpacity onPress={() => setSearch("")}>
+                  <Ionicons name="close-circle" size={15} color={Colors.hint} />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {forumFiltered.length === 0 && !loading && !error && forum.length > 0 ? (
+            /* ── NO SEARCH RESULTS ── */
+            <View style={g.empty}>
+              <Ionicons name="chatbubbles-outline" size={40} color={Colors.border} />
+              <Text style={g.emptyTitle}>Tidak ada forum yang cocok</Text>
+            </View>
+          ) : !loading && !error && forum.length === 0 ? (
             /* ── EMPTY STATE ── */
             <View style={g.empty}>
               <Ionicons
@@ -133,13 +172,10 @@ export default function ForumKelas() {
             </View>
           ) : (
             /* ── DATA ── */
-            forum.map((f) => (
+            forumFiltered.map((f) => (
               <TouchableOpacity
                 key={f.id}
-                style={[
-                  g.card,
-                  { flexDirection: "row", alignItems: "center", gap: 12 },
-                ]}
+                style={g.listRow}
                 activeOpacity={0.75}
                 onPress={() => {
                   if (!f.id) return;
@@ -153,7 +189,7 @@ export default function ForumKelas() {
                     color={Colors.primary}
                   />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={g.flex1}>
                   <Text style={g.listRowSub}>
                     Pertemuan {f.nomor_pertemuan}
                   </Text>
@@ -181,5 +217,27 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 8,
     backgroundColor: Colors.skeletonBase,
+  },
+  skeletonBody: { flex: 1, gap: 6 },
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
+
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.text,
+    padding: 0,
   },
 });

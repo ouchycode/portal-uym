@@ -2,9 +2,11 @@ import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,10 +30,6 @@ export default function Kehadiran() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    getKelas();
-  }, [periode]);
-
   const getKelas = async () => {
     setLoading(true);
     setError(false);
@@ -47,15 +45,22 @@ export default function Kehadiran() {
     }
   };
 
+  useEffect(() => {
+    getKelas();
+  }, [periode]);
+
+  const { refreshing, onRefresh } = useRefresh(getKelas);
+
   const periodeLabel =
     PERIODE_OPTIONS.find((p) => p.value === periode)?.label ?? "-";
 
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={styles.scrollBg}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
         <View style={g.header}>
@@ -121,9 +126,11 @@ export default function Kehadiran() {
 
           {loading ? (
             [1, 2, 3, 4].map((i) => (
-              <View key={i} style={g.card}>
-                <View style={g.gradeBadge} />
-                <View style={{ flex: 1, gap: 8 }}>
+              <View key={i} style={g.listRow}>
+                <View style={g.iconWrap}>
+                  <SkeletonBlock width={20} height={20} borderRadius={4} />
+                </View>
+                <View style={styles.skelBody}>
                   <SkeletonBlock width="70%" height={13} />
                   <SkeletonBlock width="45%" height={11} />
                 </View>
@@ -157,10 +164,7 @@ export default function Kehadiran() {
             kelas.map((k, i) => (
               <TouchableOpacity
                 key={i}
-                style={[
-                  g.card,
-                  { flexDirection: "row", alignItems: "center", gap: 12 },
-                ]}
+                style={g.listRow}
                 activeOpacity={0.75}
                 onPress={() => {
                   if (!k.id) return;
@@ -177,7 +181,7 @@ export default function Kehadiran() {
                     color={Colors.primary}
                   />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={g.flex1}>
                   <Text style={g.listRowTitle} numberOfLines={2}>
                     {k.mata_kuliah?.kode
                       ? `${k.mata_kuliah.kode} — ${k.mata_kuliah?.nama}`
@@ -209,4 +213,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingRight: 32,
   },
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
+  skelBody: { flex: 1, gap: 8 },
 });

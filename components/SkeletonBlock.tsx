@@ -5,9 +5,16 @@ import { Animated, StyleSheet, View } from "react-native";
 type Props = {
   width?: number | `${number}%`;
   height?: number;
+  borderRadius?: number;
+  style?: any;
 };
 
-export function SkeletonBlock({ width = "100%", height = 12 }: Props) {
+export function SkeletonBlock({
+  width = "100%",
+  height = 12,
+  borderRadius,
+  style,
+}: Props) {
   const shimmer = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -33,7 +40,14 @@ export function SkeletonBlock({ width = "100%", height = 12 }: Props) {
   });
 
   return (
-    <View style={[styles.block, { width: width as any, height }]}>
+    <View
+      style={[
+        styles.block,
+        { width: width as any, height },
+        borderRadius != null && { borderRadius },
+        style,
+      ]}
+    >
       <Animated.View
         style={[StyleSheet.absoluteFill, styles.shimmer, { opacity }]}
       />

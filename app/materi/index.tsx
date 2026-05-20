@@ -2,13 +2,16 @@ import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Linking,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -67,10 +70,7 @@ export default function Materi() {
   const [periode, setPeriode] = useState(20252);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
-  useEffect(() => {
-    getKelas();
-  }, [periode]);
+  const [search, setSearch] = useState("");
 
   const getKelas = async () => {
     setLoading(true);
@@ -88,6 +88,12 @@ export default function Materi() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    getKelas();
+  }, [periode]);
+
+  const { refreshing, onRefresh } = useRefresh(getKelas);
 
   const toggleKelas = async (id: string) => {
     const isOpen = expanded[id];
@@ -133,12 +139,19 @@ export default function Materi() {
     0,
   );
 
+  const kelasFiltered = search
+    ? kelas.filter((k: any) =>
+        k?.nama?.toLowerCase().includes(search.toLowerCase()),
+      )
+    : kelas;
+
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={styles.scrollBg}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
         <View style={g.header}>
@@ -190,6 +203,24 @@ export default function Materi() {
           ))}
         </ScrollView>
 
+        {/* SEARCH BAR */}
+        <View style={styles.searchWrap}>
+          <Ionicons name="search-outline" size={15} color={Colors.hint} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Cari kelas..."
+            placeholderTextColor={Colors.hint}
+            value={search}
+            onChangeText={setSearch}
+            returnKeyType="search"
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch("")}>
+              <Ionicons name="close-circle" size={15} color={Colors.hint} />
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* BODY */}
         <View style={g.body}>
           <Text style={g.sectionLabel}>
@@ -197,9 +228,9 @@ export default function Materi() {
               ? "Memuat kelas..."
               : error
                 ? "Gagal memuat data"
-                : kelas.length === 0
+                : kelasFiltered.length === 0
                   ? "Tidak ada kelas ditemukan"
-                  : `${kelas.length} kelas · ${totalMateri > 0 ? `${totalMateri} materi dimuat` : "tap kelas untuk lihat materi"}`}
+                  : `${kelasFiltered.length}${search ? `/${kelas.length}` : ""} kelas · ${totalMateri > 0 ? `${totalMateri} materi dimuat` : "tap kelas untuk lihat materi"}`}
           </Text>
 
           {/* SKELETON */}
@@ -207,19 +238,10 @@ export default function Materi() {
             [1, 2, 3, 4].map((i) => (
               <View
                 key={i}
-                style={[
-                  g.card,
-                  {
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: 14,
-                    marginBottom: 8,
-                  },
-                ]}
+                style={[g.listRow, styles.skeletonCardExtra]}
               >
                 <View style={styles.skeletonLeft} />
-                <View style={{ flex: 1, gap: 8 }}>
+                <View style={styles.skeletonTextWrap}>
                   <SkeletonBlock width="65%" height={13} />
                   <SkeletonBlock width="40%" height={11} />
                 </View>
@@ -252,7 +274,7 @@ export default function Materi() {
               </Text>
             </View>
           ) : (
-            kelas.map((k) => {
+            kelasFiltered.map((k: any) => {
               const id = k.id;
               const isOpen = expanded[id] ?? false;
               const isLoadingM = loadingMateri[id] ?? false;
@@ -307,7 +329,7 @@ export default function Materi() {
                           {[1, 2].map((i) => (
                             <View key={i} style={styles.materiSkeletonRow}>
                               <View style={styles.skeletonExt} />
-                              <View style={{ flex: 1, gap: 6 }}>
+                              <View style={styles.materiSkelText}>
                                 <SkeletonBlock width="60%" height={12} />
                                 <SkeletonBlock width="35%" height={10} />
                               </View>
@@ -426,7 +448,7 @@ const styles = StyleSheet.create({
 
   kelasCard: {
     backgroundColor: Colors.card,
-    borderRadius: 12, // was 8
+    borderRadius: 12,
     borderWidth: 0.5,
     borderColor: Colors.border,
     marginBottom: 8,
@@ -441,10 +463,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 14, // was 12
+    padding: 14,
   },
   kelasInfo: { flex: 1 },
-
   kelasRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -465,7 +486,7 @@ const styles = StyleSheet.create({
   skeletonExt: {
     width: 40,
     height: 40,
-    borderRadius: 8, // was 4
+    borderRadius: 8,
     backgroundColor: Colors.skeletonBase,
   },
   materiEmpty: {
@@ -489,7 +510,7 @@ const styles = StyleSheet.create({
   extBadge: {
     width: 44,
     height: 44,
-    borderRadius: 8, // was 4
+    borderRadius: 8,
     borderWidth: 0.5,
     alignItems: "center",
     justifyContent: "center",
@@ -507,7 +528,32 @@ const styles = StyleSheet.create({
   skeletonLeft: {
     width: 36,
     height: 36,
-    borderRadius: 8, // was 4
+    borderRadius: 8,
     backgroundColor: Colors.skeletonBase,
+  },
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
+  skeletonCardExtra: { marginBottom: 8 },
+  skeletonTextWrap: { flex: 1, gap: 8 },
+  materiSkelText: { flex: 1, gap: 6 },
+
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.text,
+    padding: 0,
   },
 });

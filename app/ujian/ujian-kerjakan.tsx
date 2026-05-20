@@ -59,28 +59,24 @@ const ALFABET = ["A", "B", "C", "D", "E", "F"];
 const UjianSkeleton = () => (
   <View style={styles.skeletonCard}>
     <View style={styles.skeletonStripe} />
-    <View style={{ flex: 1, padding: 14, gap: 10 }}>
-      {/* header row */}
-      <View style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+    <View style={styles.skelBody}>
+      <View style={styles.skelHeaderRow}>
         <View style={styles.skeletonIcon} />
-        <View style={{ flex: 1, gap: 6 }}>
+        <View style={styles.skelHeaderText}>
           <SkeletonBlock height={15} width="70%" />
           <SkeletonBlock height={11} width="40%" />
         </View>
       </View>
-      <View style={{ height: 1, backgroundColor: Colors.border }} />
-      {/* meta chips */}
-      <View style={{ flexDirection: "row", gap: 6 }}>
+      <View style={styles.skelDivider} />
+      <View style={styles.skelChipRow}>
         <SkeletonBlock height={22} width={90} />
         <SkeletonBlock height={22} width={70} />
         <SkeletonBlock height={22} width={80} />
       </View>
-      {/* deadline row */}
-      <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+      <View style={styles.skelDeadlineRow}>
         <SkeletonBlock height={11} width="55%" />
         <SkeletonBlock height={20} width={80} />
       </View>
-      {/* status badge */}
       <SkeletonBlock height={26} width={140} />
     </View>
   </View>
@@ -244,13 +240,13 @@ export default function UjianKerjakan() {
     return (
       <SafeAreaView style={g.safeArea}>
         <ScrollView
-          style={{ flex: 1, backgroundColor: Colors.bg }}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          style={styles.scrollBg}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* header skeleton */}
-          <View style={[g.header, { paddingBottom: 36 }]}>
-            <View style={{ gap: 8, marginTop: 8 }}>
+          <View style={[g.header, styles.skelHeaderWrap]}>
+            <View style={styles.skelHeaderInner}>
               <SkeletonBlock height={12} width="30%" />
               <SkeletonBlock height={22} width="60%" />
             </View>
@@ -272,8 +268,8 @@ export default function UjianKerjakan() {
     return (
       <SafeAreaView style={g.safeArea}>
         <ScrollView
-          style={{ flex: 1, backgroundColor: Colors.bg }}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          style={styles.scrollBg}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={g.header}>
@@ -312,8 +308,8 @@ export default function UjianKerjakan() {
     return (
       <SafeAreaView style={g.safeArea}>
         <ScrollView
-          style={{ flex: 1, backgroundColor: Colors.bg }}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          style={styles.scrollBg}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={g.header}>
@@ -348,8 +344,8 @@ export default function UjianKerjakan() {
     return (
       <SafeAreaView style={g.safeArea}>
         <ScrollView
-          style={{ flex: 1, backgroundColor: Colors.bg }}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          style={styles.scrollBg}
+          contentContainerStyle={styles.scrollContent}
         >
           <View style={styles.hasilHeader}>
             <View style={styles.hasilIcon}>
@@ -422,8 +418,8 @@ export default function UjianKerjakan() {
     return (
       <SafeAreaView style={g.safeArea}>
         <ScrollView
-          style={{ flex: 1, backgroundColor: Colors.bg }}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          style={styles.scrollBg}
+          contentContainerStyle={styles.scrollContent}
         >
           <View style={g.header}>
             <TouchableOpacity
@@ -442,8 +438,8 @@ export default function UjianKerjakan() {
 
           <View style={g.body}>
             {/* INFO CARD */}
-            <View style={[g.card, { padding: 14, gap: 8 }]}>
-              <Text style={styles.infoCardTitle}>
+          <View style={[g.card, styles.infoCardPad]}>
+            <Text style={styles.infoCardTitle}>
                 Perhatian sebelum memulai
               </Text>
               <View style={g.divider} />
@@ -587,7 +583,7 @@ export default function UjianKerjakan() {
   const jawabanSekarang = jawaban[soalSekarang?.id] ?? null;
 
   return (
-    <SafeAreaView style={[g.safeArea, { backgroundColor: Colors.bg }]}>
+    <SafeAreaView style={[g.safeArea, styles.kerjakanBg]}>
       {/* TOP BAR */}
       <View style={styles.topBar}>
         <TouchableOpacity style={g.retryBtn} onPress={() => setShowNav(true)}>
@@ -662,15 +658,15 @@ export default function UjianKerjakan() {
 
       {/* SOAL */}
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        style={g.flex1}
+        contentContainerStyle={styles.soalScrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.soalHeader}>
           <View style={styles.soalNomorBadge}>
             <Text style={styles.soalNomor}>{currentIdx + 1}</Text>
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={g.flex1}>
             <Text style={styles.soalPoin}>{soalSekarang?.poin} poin</Text>
           </View>
           {jawabanSekarang && (
@@ -930,6 +926,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: Colors.skeletonBase,
   },
+  skelBody: { flex: 1, padding: 14, gap: 10 },
+  skelHeaderRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+  skelHeaderText: { flex: 1, gap: 6 },
+  skelDivider: { height: 1, backgroundColor: Colors.border },
+  skelChipRow: { flexDirection: "row", gap: 6 },
+  skelDeadlineRow: { flexDirection: "row", gap: 6, alignItems: "center" },
+  skelHeaderWrap: { paddingBottom: 36 },
+  skelHeaderInner: { gap: 8, marginTop: 8 },
+  infoCardPad: { padding: 14, gap: 8 },
+  kerjakanBg: { backgroundColor: Colors.bg },
+  soalScrollContent: { padding: 16, paddingBottom: 120 },
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
 
   // ── info card ──
   infoCard: {

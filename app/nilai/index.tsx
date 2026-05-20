@@ -2,9 +2,11 @@ import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -105,10 +107,6 @@ export default function Nilai() {
   const [error, setError] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    getNilai();
-  }, [periode]);
-
   const getNilai = async () => {
     setLoading(true);
     setError(false);
@@ -133,12 +131,19 @@ export default function Nilai() {
     PERIODE_OPTIONS.find((p) => p.value === periode)?.label ?? "";
   const rataRataSemester = getRataRataSemester(data);
 
+  useEffect(() => {
+    getNilai();
+  }, [periode]);
+
+  const { refreshing, onRefresh } = useRefresh(getNilai);
+
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={styles.scrollBg}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
         <View style={g.header}>
@@ -193,18 +198,7 @@ export default function Nilai() {
         <View style={g.body}>
           {/* RATA-RATA SEMESTER CARD */}
           {!loading && !error && rataRataSemester !== null && (
-            <View
-              style={[
-                g.card,
-                {
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: 14,
-                  marginBottom: 16,
-                },
-              ]}
-            >
+            <View style={[g.card, styles.ipkCard]}>
               <View style={styles.ipkLeft}>
                 <View style={g.iconWrap}>
                   <Ionicons
@@ -239,28 +233,9 @@ export default function Nilai() {
           {/* SKELETON / ERROR / EMPTY / LIST */}
           {loading ? (
             [1, 2, 3, 4].map((i) => (
-              <View
-                key={i}
-                style={[
-                  g.card,
-                  {
-                    padding: 14,
-                    marginBottom: 8,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                  },
-                ]}
-              >
-                <View
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    backgroundColor: Colors.skeletonBase,
-                  }}
-                />
-                <View style={{ flex: 1, gap: 8 }}>
+              <View key={i} style={[g.card, styles.skeletonCard]}>
+                <SkeletonBlock width={36} height={36} borderRadius={8} />
+                <View style={styles.skeletonTextWrap}>
                   <SkeletonBlock width="70%" height={13} />
                   <SkeletonBlock width="45%" height={11} />
                 </View>
@@ -306,7 +281,7 @@ export default function Nilai() {
               return (
                 <View
                   key={k.id_kelas_kuliah}
-                  style={[g.card, { marginBottom: 8, overflow: "hidden" }]}
+                  style={[g.card, styles.nilaiCard]}
                 >
                   <TouchableOpacity
                     style={styles.cardHeader}
@@ -320,7 +295,7 @@ export default function Nilai() {
                         color={Colors.primary}
                       />
                     </View>
-                    <View style={{ flex: 1 }}>
+                    <View style={g.flex1}>
                       <Text style={g.listRowTitle} numberOfLines={2}>
                         {mk?.kode ? `${mk.kode} — ${mk.nama}` : mk?.nama || "-"}
                       </Text>
@@ -483,4 +458,22 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: "center",
   },
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
+  ipkCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 14,
+    marginBottom: 16,
+  },
+  skeletonCard: {
+    padding: 14,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  skeletonTextWrap: { flex: 1, gap: 8 },
+  nilaiCard: { marginBottom: 8, overflow: "hidden" },
 });

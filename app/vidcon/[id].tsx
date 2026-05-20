@@ -2,11 +2,13 @@ import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
   Linking,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -45,30 +47,25 @@ const getStatus = (v: any): "live" | "selesai" | "pending" => {
 
 const DetailSkeleton = () => (
   <View style={g.card}>
-    {/* stripe kiri */}
     <View style={styles.skeletonStripe} />
-    <View style={{ flex: 1, padding: 12, gap: 8 }}>
-      {/* top row: icon + judul */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+    <View style={styles.skelBody}>
+      <View style={styles.skelTopRow}>
         <View style={styles.skeletonIcon} />
         <SkeletonBlock height={14} width="65%" />
       </View>
-      {/* divider */}
-      <View style={{ height: 1, backgroundColor: Colors.border }} />
-      {/* info rows */}
-      <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+      <View style={styles.skelDivider} />
+      <View style={styles.skelInfoRow}>
         <SkeletonBlock height={13} width={13} />
         <SkeletonBlock height={11} width="55%" />
       </View>
-      <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+      <View style={styles.skelInfoRow}>
         <SkeletonBlock height={13} width={13} />
         <SkeletonBlock height={11} width="75%" />
       </View>
-      <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+      <View style={styles.skelInfoRow}>
         <SkeletonBlock height={13} width={13} />
         <SkeletonBlock height={11} width="40%" />
       </View>
-      {/* tombol join */}
       <SkeletonBlock height={46} width="100%" />
     </View>
   </View>
@@ -115,6 +112,8 @@ export default function VidconDetail() {
     }
   };
 
+  const { refreshing, onRefresh } = useRefresh(getDetail);
+
   const openMeeting = async (url: string) => {
     if (!url) return;
     try {
@@ -136,9 +135,10 @@ export default function VidconDetail() {
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={styles.scrollBg}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
         <View style={g.header}>
@@ -308,7 +308,7 @@ export default function VidconDetail() {
                     ? data.join_data
                     : data.join_data.slice(0, 3)
                   ).map((j: any, i: number) => (
-                    <View key={i} style={[g.listRow, { gap: 10 }]}>
+                    <View key={i} style={[g.listRow, styles.pesertaRow]}>
                       <View style={g.iconWrap}>
                         <Ionicons
                           name="person-outline"
@@ -316,7 +316,7 @@ export default function VidconDetail() {
                           color={Colors.primary}
                         />
                       </View>
-                      <View style={{ flex: 1 }}>
+                      <View style={g.flex1}>
                         <Text style={g.listRowTitle}>{j.username}</Text>
                         <Text style={g.listRowSub}>
                           {new Date(j.waktu_join).toLocaleString("id-ID", {
@@ -418,4 +418,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   toggleText: { fontSize: 11, color: Colors.primary, fontWeight: "600" },
+  skelBody: { flex: 1, padding: 12, gap: 8 },
+  skelTopRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  skelDivider: { height: 1, backgroundColor: Colors.border },
+  skelInfoRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
+  pesertaRow: { gap: 10 },
 });

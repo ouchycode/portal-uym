@@ -2,11 +2,13 @@ import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
   Linking,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -68,23 +70,17 @@ const goToDetail = (id: any, v: any) => {
 // ─── Skeleton card: mirip struktur card asli (stripe + icon + rows) ───────────
 const VidconSkeleton = () => (
   <View style={styles.skeletonCard}>
-    {/* stripe kiri — sama persis seperti card asli */}
     <View style={styles.skeletonStripe} />
-    <View style={{ flex: 1, padding: 12, gap: 8 }}>
-      {/* top row: icon placeholder + status badge placeholder */}
+    <View style={styles.skelBody}>
       <View style={styles.skeletonTopRow}>
         <View style={styles.skeletonIcon} />
         <SkeletonBlock height={22} width={72} />
       </View>
-      {/* judul mata kuliah */}
       <SkeletonBlock height={14} width="70%" />
       <SkeletonBlock height={11} width="45%" />
-      {/* divider */}
-      <View style={{ height: 1, backgroundColor: Colors.border }} />
-      {/* info rows */}
+      <View style={styles.skelDivider} />
       <SkeletonBlock height={11} width="80%" />
       <SkeletonBlock height={11} width="55%" />
-      {/* tombol row */}
       <View style={styles.skeletonBtnRow}>
         <SkeletonBlock height={34} width={80} />
         <SkeletonBlock height={34} width="60%" />
@@ -98,10 +94,6 @@ export default function Vidcon() {
   const [periode, setPeriode] = useState(20252);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
-  useEffect(() => {
-    getVidcon();
-  }, [periode]);
 
   const getVidcon = async () => {
     setLoading(true);
@@ -117,6 +109,12 @@ export default function Vidcon() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    getVidcon();
+  }, [periode]);
+
+  const { refreshing, onRefresh } = useRefresh(getVidcon);
 
   const openMeeting = async (url: string) => {
     if (!url) return;
@@ -134,10 +132,11 @@ export default function Vidcon() {
 
   return (
     <SafeAreaView style={g.safeArea}>
-      <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false}
+        <ScrollView
+            style={styles.scrollBg}
+            contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
         <View style={g.header}>
@@ -314,7 +313,7 @@ export default function Vidcon() {
                       {mk?.kode ? `${mk.kode} — ${mk.nama}` : mk?.nama || "-"}
                     </Text>
 
-                    <View style={[g.divider, { marginVertical: 2 }]} />
+                    <View style={[g.divider, styles.slimDivider]} />
 
                     <View style={g.infoRow}>
                       <Ionicons
@@ -520,4 +519,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
+  skelBody: { flex: 1, padding: 12, gap: 8 },
+  skelDivider: { height: 1, backgroundColor: Colors.border },
+  slimDivider: { marginVertical: 2 },
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
 });

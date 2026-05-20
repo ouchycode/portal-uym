@@ -6,8 +6,10 @@ import { createJSONStorage, persist } from "zustand/middleware";
 interface AuthState {
   token: string | null;
   user: any;
+  isHydrated: boolean;
   setAuth: (token: string, user: any) => void;
   logout: () => void;
+  setHydrated: () => void;
 }
 
 export const useAuth = create<AuthState>()(
@@ -15,7 +17,9 @@ export const useAuth = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
+      isHydrated: false,
       setAuth: (token, user) => set({ token, user }),
+      setHydrated: () => set({ isHydrated: true }),
       logout: () => {
         set({ token: null, user: null });
         router.replace("/login");
@@ -24,6 +28,9 @@ export const useAuth = create<AuthState>()(
     {
       name: "auth-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => () => {
+        useAuth.getState().setHydrated();
+      },
     },
   ),
 );

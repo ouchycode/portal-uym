@@ -102,7 +102,7 @@ function InfoRow({ icon, label, value, badge }: any) {
       <View style={g.iconWrap}>
         <Ionicons name={icon} size={15} color={Colors.primary} />
       </View>
-      <View style={{ flex: 1, gap: 3 }}>
+      <View style={[g.flex1, { gap: 3 }]}>
         <Text style={g.infoLabel}>{label}</Text>
         {badge ? (
           <View
@@ -128,11 +128,11 @@ function InfoRow({ icon, label, value, badge }: any) {
 
 function SkeletonRows() {
   return (
-    <View style={{ gap: 12 }}>
+    <View style={styles.skeletonGap}>
       {[1, 2, 3].map((i) => (
         <View key={i} style={[g.infoRow, { alignItems: "center" }]}>
           <SkeletonBlock height={32} width={32} />
-          <View style={{ flex: 1, gap: 6 }}>
+          <View style={[g.flex1, { gap: 6 }]}>
             <SkeletonBlock height={10} width="35%" />
             <SkeletonBlock height={13} width="60%" />
           </View>
@@ -476,8 +476,8 @@ export default function DetailTugas() {
       </View>
 
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        style={g.flex1}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* INFO TUGAS */}
@@ -537,16 +537,10 @@ export default function DetailTugas() {
           <View style={g.card}>
             <SectionHeader icon="people-outline" title="Kelompok Saya" />
             {loadingKelompok ? (
-              <View style={{ gap: 10 }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
-                >
+              <View style={styles.skeletonGap}>
+                <View style={styles.skeletonRow}>
                   <SkeletonBlock width={36} height={36} />
-                  <View style={{ flex: 1, gap: 6 }}>
+                  <View style={[g.flex1, { gap: 6 }]}>
                     <SkeletonBlock height={14} width="50%" />
                     <SkeletonBlock height={11} width="35%" />
                   </View>
@@ -557,19 +551,16 @@ export default function DetailTugas() {
               <>
                 <View
                   style={[
-                    g.card,
+                    g.listRow,
                     {
-                      flexDirection: "row",
-                      alignItems: "center",
                       gap: 10,
-                      padding: 12,
                       backgroundColor: Colors.primaryLight,
                       borderColor: Colors.primaryMid,
                     },
                   ]}
                 >
                   <Ionicons name="people" size={18} color={Colors.primary} />
-                  <View style={{ flex: 1 }}>
+                  <View style={g.flex1}>
                     <Text style={styles.kelompokNama}>{kelompok.nama}</Text>
                     <Text style={styles.kelompokSub}>
                       {kelompok.anggota?.length ?? 0} anggota
@@ -629,7 +620,7 @@ export default function DetailTugas() {
                               </Text>
                             )}
                           </View>
-                          <View style={{ flex: 1 }}>
+                          <View style={g.flex1}>
                             <Text style={styles.anggotaName}>
                               {a.mahasiswa?.nama}
                               {isMe ? " (Kamu)" : ""}
@@ -650,7 +641,7 @@ export default function DetailTugas() {
                             !isMe && (
                               <TouchableOpacity
                                 onPress={() => handleRemoveAnggota(a)}
-                                style={{ padding: 8 }}
+                                style={styles.trashBtn}
                               >
                                 <Ionicons
                                   name="trash-outline"
@@ -909,7 +900,7 @@ export default function DetailTugas() {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
+          style={g.flex1}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalCard}>
@@ -969,23 +960,11 @@ export default function DetailTugas() {
                         color={Colors.primary}
                       />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={{
-                          fontWeight: "600",
-                          color: Colors.text,
-                          fontSize: 13,
-                        }}
-                      >
+                    <View style={g.flex1}>
+                      <Text style={styles.searchNama}>
                         {mhs.nama}
                       </Text>
-                      <Text
-                        style={{
-                          color: Colors.muted,
-                          fontSize: 11,
-                          marginTop: 2,
-                        }}
-                      >
+                      <Text style={styles.searchNim}>
                         {mhs.nim}
                       </Text>
                     </View>
@@ -1006,6 +985,17 @@ export default function DetailTugas() {
 }
 
 const styles = StyleSheet.create({
+  skeletonGap: { gap: 10 },
+  skeletonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 60,
+  },
+
   inlineBadge: {
     alignSelf: "flex-start",
     borderWidth: 0.5,
@@ -1090,4 +1080,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderColor: Colors.border,
   },
+  searchNama: {
+    fontWeight: "600",
+    color: Colors.text,
+    fontSize: 13,
+  },
+  searchNim: {
+    color: Colors.muted,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  trashBtn: { padding: 8 },
 });

@@ -17,4 +17,14 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+API.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error?.response?.status === 401) {
+      useAuth.getState().logout();
+    }
+    return Promise.reject(error);
+  },
+);
+
 export default API;

@@ -80,8 +80,8 @@ export default function Bantuan() {
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={styles.scrollBg}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
@@ -117,7 +117,7 @@ export default function Bantuan() {
 
           {/* HUBUNGI KAMI */}
           <View style={styles.sectionWrap}>
-            <View style={[g.sectionHeader, { marginBottom: 12 }]}>
+            <View style={[g.sectionHeader, styles.sectionExtra]}>
               <Ionicons name="call-outline" size={14} color={Colors.primary} />
               <Text style={g.sectionTitle}>Hubungi Kami</Text>
             </View>
@@ -126,14 +126,8 @@ export default function Bantuan() {
               <TouchableOpacity
                 key={i}
                 style={[
-                  g.card,
-                  {
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: 14,
-                    marginBottom: 8,
-                  },
+                  g.listRow,
+                  styles.contactCard,
                   !c.action && { opacity: 0.8 },
                 ]}
                 onPress={c.action}
@@ -143,7 +137,7 @@ export default function Bantuan() {
                 <View style={g.iconWrap}>
                   <Ionicons name={c.icon} size={18} color={Colors.primary} />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={g.flex1}>
                   <Text style={g.infoLabel}>{c.label}</Text>
                   <Text style={g.infoValue}>{c.value}</Text>
                 </View>
@@ -164,9 +158,9 @@ export default function Bantuan() {
               <Text style={styles.jamDay}>Senin – Jumat</Text>
               <Text style={styles.jamTime}>08.00 – 16.00 WIB</Text>
             </View>
-            <View style={[styles.jamRow, { borderBottomWidth: 0 }]}>
+            <View style={[styles.jamRow, styles.jamRowLast]}>
               <Text style={styles.jamDay}>Sabtu – Minggu</Text>
-              <Text style={[styles.jamTime, { color: Colors.dangerText }]}>
+              <Text style={[styles.jamTime, styles.jamClosed]}>
                 Tutup
               </Text>
             </View>
@@ -174,7 +168,7 @@ export default function Bantuan() {
 
           {/* FAQ */}
           <View style={styles.sectionWrap}>
-            <View style={[g.sectionHeader, { marginBottom: 12 }]}>
+            <View style={[g.sectionHeader, styles.sectionExtra]}>
               <Ionicons
                 name="help-circle-outline"
                 size={14}
@@ -194,7 +188,7 @@ export default function Bantuan() {
                 >
                   <View style={styles.faqHeader}>
                     <Text
-                      style={[styles.faqQ, isOpen && { color: Colors.primary }]}
+                      style={[styles.faqQ, isOpen && styles.faqQOpen]}
                     >
                       {faq.q}
                     </Text>
@@ -292,4 +286,11 @@ const styles = StyleSheet.create({
     color: Colors.muted,
     lineHeight: 19,
   },
+  faqQOpen: { color: Colors.primary },
+  sectionExtra: { marginBottom: 12 },
+  contactCard: { padding: 14, marginBottom: 8 },
+  jamRowLast: { borderBottomWidth: 0 },
+  jamClosed: { color: Colors.dangerText },
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
 });

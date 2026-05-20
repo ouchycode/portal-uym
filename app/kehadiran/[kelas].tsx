@@ -2,12 +2,15 @@ import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -95,10 +98,7 @@ export default function DetailKehadiran() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [filter, setFilter] = useState<StatusKey | "semua">("semua");
-
-  useEffect(() => {
-    if (kelas) getData();
-  }, [kelas]);
+  const [search, setSearch] = useState("");
 
   const getData = async () => {
     setLoading(true);
@@ -114,6 +114,12 @@ export default function DetailKehadiran() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (kelas) getData();
+  }, [kelas]);
+
+  const { refreshing, onRefresh } = useRefresh(getData);
 
   // INFO MK & KELAS
   const namaMK =
@@ -149,17 +155,24 @@ export default function DetailKehadiran() {
     return aTime - bTime;
   });
 
-  const dataFiltered =
+  const dataByFilter =
     filter === "semua"
       ? dataSorted
       : dataSorted.filter((d) => getStatusKey(d) === filter);
 
+  const dataFiltered = search
+    ? dataByFilter.filter((d) =>
+        d.pertemuan?.judul?.toLowerCase().includes(search.toLowerCase()),
+      )
+    : dataByFilter;
+
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={styles.scrollBg}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
         <View style={g.header}>
@@ -190,9 +203,9 @@ export default function DetailKehadiran() {
           {loading ? (
             <View style={styles.summaryCardSkeleton}>
               <SkeletonBlock height={16} width="40%" />
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
+              <View style={styles.skeletonStatRow}>
                 {[1, 2, 3, 4].map((i) => (
-                  <View key={i} style={styles.skeletonStatBox} />
+                  <SkeletonBlock key={i} height={56} borderRadius={8} />
                 ))}
               </View>
             </View>
@@ -262,8 +275,8 @@ export default function DetailKehadiran() {
                 size={16}
                 color={Colors.warningText}
               />
-              <View style={{ flex: 1 }}>
-                <Text style={[g.warningBoxText, { fontWeight: "700" }]}>
+              <View style={g.flex1}>
+                <Text style={styles.warningBold}>
                   Kehadiran perlu diperhatikan
                 </Text>
                 <Text style={g.warningBoxText}>
@@ -271,6 +284,26 @@ export default function DetailKehadiran() {
                   dapat mempengaruhi akses UTS/UAS.
                 </Text>
               </View>
+            </View>
+          )}
+
+          {/* SEARCH BAR */}
+          {!loading && !error && (
+            <View style={styles.searchWrap}>
+              <Ionicons name="search-outline" size={15} color={Colors.hint} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Cari pertemuan..."
+                placeholderTextColor={Colors.hint}
+                value={search}
+                onChangeText={setSearch}
+                returnKeyType="search"
+              />
+              {search.length > 0 && (
+                <TouchableOpacity onPress={() => setSearch("")}>
+                  <Ionicons name="close-circle" size={15} color={Colors.hint} />
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -332,23 +365,9 @@ export default function DetailKehadiran() {
           {/* LIST */}
           {loading ? (
             [1, 2, 3, 4, 5].map((i) => (
-              <View
-                key={i}
-                style={[
-                  g.card,
-                  { flexDirection: "row", alignItems: "center", gap: 12 },
-                ]}
-              >
-                <View
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    backgroundColor: Colors.skeletonBase,
-                  }}
-                />
-
-                <View style={{ flex: 1, gap: 8 }}>
+              <View key={i} style={g.listRow}>
+                <SkeletonBlock width={36} height={36} borderRadius={8} />
+                <View style={styles.skeletonTextWrap}>
                   <SkeletonBlock width="50%" height={12} />
                   <SkeletonBlock width="70%" height={11} />
                   <SkeletonBlock width="30%" height={11} />
@@ -394,7 +413,7 @@ export default function DetailKehadiran() {
                   >
                     <Ionicons name={cfg.icon} size={18} color={cfg.color} />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  <View style={g.flex1}>
                     <Text style={styles.cardTitle}>
                       Pertemuan {d.pertemuan?.nomor ?? i + 1}
                       {d.pertemuan?.jenis ? ` · ${d.pertemuan.jenis}` : ""}
@@ -508,10 +527,28 @@ const styles = StyleSheet.create({
   cardDate: { fontSize: 11, color: Colors.muted, marginTop: 2 },
   cardMateri: { fontSize: 11, color: Colors.muted, marginTop: 1 },
 
-  skeletonStatBox: {
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
+  skeletonStatRow: { flexDirection: "row", gap: 8, marginTop: 14 },
+  warningBold: { fontWeight: "700" },
+  skeletonTextWrap: { flex: 1, gap: 8 },
+
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginBottom: 12,
+  },
+  searchInput: {
     flex: 1,
-    height: 56,
-    borderRadius: 8,
-    backgroundColor: Colors.skeletonBase,
+    fontSize: 13,
+    color: Colors.text,
+    padding: 0,
   },
 });

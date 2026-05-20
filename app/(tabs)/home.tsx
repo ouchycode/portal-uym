@@ -5,9 +5,11 @@ import { useAuth } from "@/store/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import { useRefresh } from "@/hooks/useRefresh";
 import {
   Alert,
   Linking,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -112,10 +114,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
     setLoading(true);
     setError(false);
@@ -177,16 +175,23 @@ export default function Home() {
     year: "numeric",
   });
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const { refreshing, onRefresh } = useRefresh(loadData);
+
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
         <View style={g.headerSection}>
           <View style={g.topBar}>
-            <View style={{ flex: 1 }}>
+            <View style={g.flex1}>
               <Text style={g.headerLabel}>PORTAL MAHASISWA</Text>
               <Text style={styles.greetName}>
                 {getGreeting()}, {firstName} 👋
@@ -355,13 +360,7 @@ export default function Home() {
                 <TouchableOpacity
                   key={i}
                   style={[
-                    g.card,
-                    {
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: 12,
-                    },
+                    g.listRow,
                     isLive && { borderColor: Colors.successBorder },
                   ]}
                   activeOpacity={0.75}
@@ -385,19 +384,19 @@ export default function Home() {
                       color={Colors.primary}
                     />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  <View style={g.flex1}>
                     <Text style={g.listRowTitle} numberOfLines={1}>
                       {mkNama || "-"}
                     </Text>
                     <Text style={g.listRowSub}>{v.judul || "-"}</Text>
                     {v.waktu_mulai && (
-                      <View style={styles.cardMeta}>
+                      <View style={g.cardMeta}>
                         <Ionicons
                           name="time-outline"
                           size={11}
                           color={Colors.hint}
                         />
-                        <Text style={styles.cardMetaText}>
+                        <Text style={g.cardMetaText}>
                           {new Date(v.waktu_mulai).toLocaleTimeString("id-ID", {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -406,7 +405,7 @@ export default function Home() {
                         {v.aplikasi && (
                           <>
                             <Text style={g.dot}>·</Text>
-                            <Text style={styles.cardMetaText}>
+                            <Text style={g.cardMetaText}>
                               {v.aplikasi}
                             </Text>
                           </>
@@ -473,15 +472,7 @@ export default function Home() {
               return (
                 <View
                   key={i}
-                  style={[
-                    g.card,
-                    {
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: 12,
-                    },
-                  ]}
+                  style={g.listRow}
                 >
                   <View style={g.iconWrap}>
                     <Ionicons
@@ -490,24 +481,24 @@ export default function Home() {
                       color={Colors.primary}
                     />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  <View style={g.flex1}>
                     <Text style={g.listRowTitle} numberOfLines={1}>
                       {t.judul}
                     </Text>
                     <Text style={g.listRowSub} numberOfLines={1}>
                       {t.kelas_kuliah?.mata_kuliah?.nama}
                     </Text>
-                    <View style={styles.cardMeta}>
+                    <View style={g.cardMeta}>
                       <Ionicons
                         name="person-outline"
                         size={11}
                         color={Colors.hint}
                       />
-                      <Text style={styles.cardMetaText}>
+                      <Text style={g.cardMetaText}>
                         {t.created_by?.name || "-"}
                       </Text>
                       <Text style={g.dot}>·</Text>
-                      <Text style={styles.cardMetaText}>{t.jenis_tugas}</Text>
+                      <Text style={g.cardMetaText}>{t.jenis_tugas}</Text>
                     </View>
                   </View>
                   {deadline && (
@@ -572,13 +563,7 @@ export default function Home() {
                   key={i}
                   activeOpacity={0.75}
                   style={[
-                    g.card,
-                    {
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: 12,
-                    },
+                    g.listRow,
                     isBerlangsung && { borderColor: Colors.successBorder },
                   ]}
                   onPress={() =>
@@ -601,17 +586,17 @@ export default function Home() {
                       }
                     />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  <View style={g.flex1}>
                     <Text style={g.listRowTitle} numberOfLines={1}>
                       {k.mata_kuliah?.nama}
                     </Text>
-                    <View style={styles.cardMeta}>
+                    <View style={g.cardMeta}>
                       <Ionicons
                         name="time-outline"
                         size={11}
                         color={Colors.hint}
                       />
-                      <Text style={styles.cardMetaText}>
+                      <Text style={g.cardMetaText}>
                         {j?.hari !== today ? `${HARI[j?.hari ?? 0]}, ` : ""}
                         {`${j?.jam_mulai?.slice(0, 5)} – ${j?.jam_selesai?.slice(0, 5)}`}
                       </Text>
@@ -623,27 +608,27 @@ export default function Home() {
                             size={11}
                             color={Colors.hint}
                           />
-                          <Text style={styles.cardMetaText}>
+                          <Text style={g.cardMetaText}>
                             {j.ruangan.nama}
                           </Text>
                         </>
                       )}
                     </View>
                     {dosenUtama?.nama_pengajar && (
-                      <View style={styles.cardMeta}>
+                      <View style={g.cardMeta}>
                         <Ionicons
                           name="person-outline"
                           size={11}
                           color={Colors.hint}
                         />
                         <Text
-                          style={styles.cardMetaText}
+                          style={g.cardMetaText}
                           numberOfLines={1}
                         >{`${dosenUtama.nama_pengajar}${gelar}`}</Text>
                       </View>
                     )}
                   </View>
-                  <View style={{ alignItems: "flex-end", gap: 6 }}>
+                  <View style={styles.vidconRight}>
                     <View
                       style={isBerlangsung ? g.badgeSuccess : g.badgeWarning}
                     >
@@ -744,21 +729,9 @@ function SkeletonList() {
   return (
     <>
       {[1, 2].map((i) => (
-        <View
-          key={i}
-          style={[
-            g.card,
-            {
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 12,
-              padding: 14,
-              marginBottom: 8,
-            },
-          ]}
-        >
+        <View key={i} style={g.skeletonRow}>
           <SkeletonBlock width={34} height={34} />
-          <View style={{ flex: 1, gap: 7 }}>
+          <View style={[g.flex1, { gap: 7 }]}>
             <SkeletonBlock height={13} width="60%" />
             <SkeletonBlock height={11} width="40%" />
           </View>
@@ -769,6 +742,10 @@ function SkeletonList() {
 }
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    paddingBottom: 40,
+  },
+
   greetName: {
     fontSize: 18,
     fontWeight: "700",
@@ -830,15 +807,6 @@ const styles = StyleSheet.create({
   },
   quickLabel: { fontSize: 12, fontWeight: "700", color: Colors.text },
   quickSub: { fontSize: 10, color: Colors.muted },
-
-  cardMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 4,
-    flexWrap: "wrap",
-  },
-  cardMetaText: { fontSize: 11, color: Colors.muted },
 
   vidconRight: { alignItems: "flex-end", gap: 6 },
   vidconBadge: {

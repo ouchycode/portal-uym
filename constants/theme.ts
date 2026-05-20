@@ -66,6 +66,16 @@ export const Colors = {
   slate: "#546E8A",
   white: "#FFFFFF",
   black: "#000000",
+
+  // ── ACTIVITY / EXTENDED ────────────────────
+  greenDot: "#22C55E",
+  mutedBg: "#F3F4F6",
+  activityTugasBg: "#FFF7ED",
+  activityTugasText: "#F97316",
+  activityKuisBg: "#F5F3FF",
+  activityKuisText: "#8B5CF6",
+  activityForumBg: "#F0F9FF",
+  activityForumText: "#0EA5E9",
 } as const;
 
 // ─────────────────────────────────────────────
@@ -318,6 +328,16 @@ export const globalStyles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
+  },
+  // Card dengan flexDirection row (pattern paling umum)
+  cardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+  },
+  flex1: {
+    flex: 1,
   },
   // Kartu dengan aksen garis kiri biru UYM
   cardAccent: {
@@ -910,6 +930,7 @@ export const globalStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 12,
     paddingVertical: 11,
     paddingHorizontal: 12,
     backgroundColor: Colors.card,
@@ -985,16 +1006,30 @@ export const globalStyles = StyleSheet.create({
   },
 
   // ── SKELETON LOADER ───────────────────────
-  skeletonLine: {
-    height: 12,
-    backgroundColor: Colors.skeletonBase,
-    borderRadius: 6,
+  skeletonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
     marginBottom: 8,
   },
-  skeletonBlock: {
-    height: 80,
-    backgroundColor: Colors.skeletonBase,
-    borderRadius: 10,
-    marginBottom: 10,
+
+  // ── META / MISC ──────────────────────────
+  cardMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+    flexWrap: "wrap",
+  },
+  cardMetaText: {
+    fontSize: 11,
+    color: Colors.muted,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.greenDot,
   },
 });

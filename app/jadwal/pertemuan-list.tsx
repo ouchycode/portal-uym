@@ -2,9 +2,11 @@ import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,22 +26,17 @@ function fmtDate(iso?: string) {
 
 function ItemSkeleton() {
   return (
-    <View
-      style={[
-        g.card,
-        { flexDirection: "row", alignItems: "center", gap: 10, padding: 12 },
-      ]}
-    >
+    <View style={g.listRow}>
       <View style={s.skeletonCircle} />
-      <View style={{ flex: 1, gap: 7 }}>
+      <View style={s.skeletonBody}>
         <SkeletonBlock height={13} width="65%" />
         <SkeletonBlock height={11} width="45%" />
-        <View style={{ flexDirection: "row", gap: 6 }}>
+        <View style={s.skeletonChipRow}>
           <SkeletonBlock height={20} width={70} />
           <SkeletonBlock height={20} width={60} />
         </View>
       </View>
-      <View style={{ alignItems: "center", gap: 6 }}>
+      <View style={s.skeletonRight}>
         <View style={s.skeletonDot} />
         <SkeletonBlock height={16} width={16} />
       </View>
@@ -76,10 +73,6 @@ export default function PertemuanList() {
   const [list, setList] = useState<any[]>([]);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    fetchPertemuan();
-  }, []);
-
   const fetchPertemuan = async () => {
     setLoading(true);
     setError(false);
@@ -97,6 +90,12 @@ export default function PertemuanList() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchPertemuan();
+  }, []);
+
+  const { refreshing, onRefresh } = useRefresh(fetchPertemuan);
 
   const selesai = list.filter((p) => p.status === "selesai").length;
   const berlangsung = list.filter((p) => p.status === "berlangsung").length;
@@ -160,16 +159,14 @@ export default function PertemuanList() {
         <View style={s.summaryOuter}>
           <View style={s.summaryStrip}>
             {[1, 2, 3].map((i) => (
-              <View key={i} style={[g.summaryCard, { flex: 1, gap: 6 }]}>
+              <View key={i} style={s.skeletonStatCard}>
                 <SkeletonBlock height={22} width="50%" />
                 <SkeletonBlock height={11} width="70%" />
               </View>
             ))}
           </View>
-          <View style={[g.card, { padding: 12, gap: 6 }]}>
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
-            >
+          <View style={s.skeletonProgressCard}>
+            <View style={s.skeletonProgHeader}>
               <SkeletonBlock height={12} width={120} />
               <SkeletonBlock height={12} width={36} />
             </View>
@@ -180,19 +177,19 @@ export default function PertemuanList() {
       ) : !error && list.length > 0 ? (
         <View style={s.summaryOuter}>
           <View style={s.summaryStrip}>
-            <View style={[g.summaryCard, { flex: 1 }]}>
+            <View style={g.summaryCard}>
               <Text style={[g.summaryValue, { color: Colors.successText }]}>
                 {selesai}
               </Text>
               <Text style={g.summaryLabel}>Selesai</Text>
             </View>
-            <View style={[g.summaryCard, { flex: 1 }]}>
+            <View style={g.summaryCard}>
               <Text style={[g.summaryValue, { color: Colors.primary }]}>
                 {berlangsung}
               </Text>
               <Text style={g.summaryLabel}>Berlangsung</Text>
             </View>
-            <View style={[g.summaryCard, { flex: 1 }]}>
+            <View style={g.summaryCard}>
               <Text style={[g.summaryValue, { color: Colors.muted }]}>
                 {tersisa}
               </Text>
@@ -225,18 +222,12 @@ export default function PertemuanList() {
       {/* CONTENT */}
       {loading ? (
         <ScrollView
-          style={{ flex: 1 }}
+          style={g.flex1}
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 16,
-              marginBottom: 12,
-              paddingHorizontal: 4,
-            }}
-          >
+          <View style={s.skeletonLegend}>
             {[80, 90, 60].map((w, i) => (
               <SkeletonBlock key={i} height={11} width={w} />
             ))}
@@ -269,7 +260,7 @@ export default function PertemuanList() {
         </View>
       ) : (
         <ScrollView
-          style={{ flex: 1 }}
+          style={g.flex1}
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
         >
@@ -300,13 +291,8 @@ export default function PertemuanList() {
               <TouchableOpacity
                 key={idP ?? i}
                 style={[
-                  g.card,
-                  {
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: 12,
-                  },
+                  g.listRow,
+                  { gap: 10 },
                   isLive && s.itemActive,
                   isDone && s.itemDone,
                 ]}
@@ -384,24 +370,24 @@ export default function PertemuanList() {
                         <ActivityBadge
                           icon="clipboard-outline"
                           label={`${act.tugas} Tugas`}
-                          color="#F97316"
-                          bg="#FFF7ED"
+                          color={Colors.activityTugasText}
+                          bg={Colors.activityTugasBg}
                         />
                       )}
                       {act.kuis > 0 && (
                         <ActivityBadge
                           icon="help-circle-outline"
                           label={`${act.kuis} Kuis`}
-                          color="#8B5CF6"
-                          bg="#F5F3FF"
+                          color={Colors.activityKuisText}
+                          bg={Colors.activityKuisBg}
                         />
                       )}
                       {act.forum > 0 && (
                         <ActivityBadge
                           icon="chatbubbles-outline"
                           label={`${act.forum} Forum`}
-                          color="#0EA5E9"
-                          bg="#F0F9FF"
+                          color={Colors.activityForumText}
+                          bg={Colors.activityForumBg}
                         />
                       )}
                     </View>
@@ -532,5 +518,17 @@ const s = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: Colors.skeletonBase,
+  },
+  skeletonBody: { flex: 1, gap: 7 },
+  skeletonChipRow: { flexDirection: "row", gap: 6 },
+  skeletonRight: { alignItems: "center", gap: 6 },
+  skeletonStatCard: { flex: 1, gap: 6 },
+  skeletonProgressCard: { padding: 12, gap: 6 },
+  skeletonProgHeader: { flexDirection: "row", justifyContent: "space-between" },
+  skeletonLegend: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
 });

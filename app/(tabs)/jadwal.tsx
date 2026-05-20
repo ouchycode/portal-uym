@@ -1,11 +1,13 @@
 import { SkeletonBlock } from "@/components/SkeletonBlock";
-import { SummaryCard } from "@/components/SummaryCard";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
+import { Calendar, LocaleConfig } from "react-native-calendars";
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +15,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SummaryCard } from "@/components/SummaryCard";
+
+LocaleConfig.locales["id"] = {
+  monthNames: ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"],
+  monthNamesShort: ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"],
+  dayNames: ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"],
+  dayNamesShort: ["Min","Sen","Sel","Rab","Kam","Jum","Sab"],
+  today: "Hari ini"
+};
+LocaleConfig.defaultLocale = "id";
 
 const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
@@ -66,23 +78,9 @@ const getClassStatus = (
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 const DaySkeleton = () => (
-  <View style={{ marginBottom: 20 }}>
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 10,
-      }}
-    >
-      <View
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: Colors.skeletonBase,
-        }}
-      />
+  <View style={styles.skeletonGroup}>
+    <View style={styles.dayHeader}>
+      <View style={styles.skeletonDayDot} />
       <SkeletonBlock height={13} width="20%" />
     </View>
     {[1, 2].map((j) => (
@@ -90,10 +88,8 @@ const DaySkeleton = () => (
         <View
           style={[styles.cardStripe, { backgroundColor: Colors.skeletonBase }]}
         />
-        <View style={{ flex: 1, padding: 12, gap: 8 }}>
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
+        <View style={styles.skeletonCardBody}>
+          <View style={styles.skeletonTopRow}>
             <SkeletonBlock height={14} width="55%" />
             <SkeletonBlock height={14} width="15%" />
           </View>
@@ -115,13 +111,13 @@ export default function Jadwal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [periode, setPeriode] = useState(20252);
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   const today = new Date().getDay();
   const isCurrentPeriode = periode === 20252;
-
-  useEffect(() => {
-    getJadwal();
-  }, [periode]);
 
   const getJadwal = async () => {
     setLoading(true);
@@ -168,11 +164,41 @@ export default function Jadwal() {
     : 0;
   const hasJadwal = hariTerurut.length > 0;
 
+  const markedDates = useMemo(() => {
+    const marks: any = {};
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    for (let i = 1; i <= daysInMonth; i++) {
+      const d = new Date(currentYear, currentMonth, i);
+      const hari = d.getDay();
+      const pad = (n: number) => n < 10 ? `0${n}` : n;
+      const dateString = `${currentYear}-${pad(currentMonth + 1)}-${pad(i)}`;
+      
+      if (perHari[hari] && perHari[hari].length > 0) {
+        marks[dateString] = { marked: true, dotColor: Colors.primary };
+      }
+    }
+    
+    if (marks[selectedDate]) {
+      marks[selectedDate] = { ...marks[selectedDate], selected: true, selectedColor: Colors.primary };
+    } else {
+      marks[selectedDate] = { selected: true, selectedColor: Colors.primary };
+    }
+    
+    return marks;
+  }, [perHari, currentMonth, currentYear, selectedDate]);
+  useEffect(() => {
+    getJadwal();
+  }, [periode]);
+
+  const { refreshing, onRefresh } = useRefresh(getJadwal);
+
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
         <View style={g.headerSection}>
@@ -181,8 +207,13 @@ export default function Jadwal() {
               <Text style={g.headerLabel}>PORTAL MAHASISWA</Text>
               <Text style={g.pageTitle}>Jadwal Kuliah</Text>
             </View>
-            <View style={g.uymBadge}>
-              <Text style={g.uymBadgeText}>UYM</Text>
+            <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+              <TouchableOpacity onPress={() => setViewMode(v => v === "list" ? "calendar" : "list")} style={styles.iconBtn}>
+                 <Ionicons name={viewMode === "list" ? "calendar-outline" : "list-outline"} size={20} color={Colors.text} />
+              </TouchableOpacity>
+              <View style={g.uymBadge}>
+                <Text style={g.uymBadgeText}>UYM</Text>
+              </View>
             </View>
           </View>
 
@@ -225,7 +256,7 @@ export default function Jadwal() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterRow}
-          style={{ marginTop: 14 }}
+          style={styles.filterScroll}
         >
           {PERIODE_OPTIONS.map((opt) => (
             <TouchableOpacity
@@ -299,9 +330,254 @@ export default function Jadwal() {
             </View>
           )}
 
-          {/* LIST */}
-          {!loading &&
-            !error &&
+          {/* CONTENT */}
+          {!loading && !error && viewMode === "calendar" && (
+            <View style={{ marginBottom: 20 }}>
+              <Calendar
+                current={selectedDate}
+                onDayPress={(day: any) => setSelectedDate(day.dateString)}
+                onMonthChange={(month: any) => {
+                  setCurrentMonth(month.month - 1);
+                  setCurrentYear(month.year);
+                }}
+                markedDates={markedDates}
+                theme={{
+                  backgroundColor: Colors.bg,
+                  calendarBackground: Colors.card,
+                  textSectionTitleColor: Colors.muted,
+                  selectedDayBackgroundColor: Colors.primary,
+                  selectedDayTextColor: '#ffffff',
+                  todayTextColor: Colors.primary,
+                  dayTextColor: Colors.text,
+                  textDisabledColor: Colors.border,
+                  dotColor: Colors.primary,
+                  selectedDotColor: '#ffffff',
+                  arrowColor: Colors.primary,
+                  monthTextColor: Colors.text,
+                  textDayFontWeight: '500',
+                  textMonthFontWeight: 'bold',
+                  textDayHeaderFontWeight: '600',
+                  textDayFontSize: 14,
+                  textMonthFontSize: 16,
+                  textDayHeaderFontSize: 12
+                }}
+                style={{ borderRadius: 12, borderWidth: 0.5, borderColor: Colors.border, overflow: "hidden" }}
+              />
+              <View style={{ marginTop: 20 }}>
+                {perHari[new Date(selectedDate).getDay()]?.length > 0 ? (
+                  [new Date(selectedDate).getDay()].map((hari) => {
+                    const isToday = isCurrentPeriode && hari === today;
+              return (
+                <View key={hari} style={styles.group}>
+                  <View style={styles.dayHeader}>
+                    <View
+                      style={[
+                        styles.dayDot,
+                        isToday && { backgroundColor: Colors.successText },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.dayLabel,
+                        isToday && { color: Colors.successText },
+                      ]}
+                    >
+                      {HARI[hari]}
+                    </Text>
+                    {isToday && (
+                      <View style={g.badgeSuccess}>
+                        <Text style={g.badgeSuccessText}>Hari ini</Text>
+                      </View>
+                    )}
+                    <Text style={styles.dayCount}>
+                      {perHari[hari].length} kelas
+                    </Text>
+                  </View>
+
+                  {perHari[hari].map((k, i) => {
+                    const j = k._jadwal;
+                    const dosen =
+                      k.pengajar?.find((p: any) => p.utama) ?? k.pengajar?.[0];
+                    const gelar = dosen?.gelar_akademik
+                      ? `, ${dosen.gelar_akademik}`
+                      : "";
+                    const accent = CARD_ACCENTS[i % CARD_ACCENTS.length];
+                    const status = getClassStatus(j, isToday, isCurrentPeriode);
+
+                    return (
+                      <TouchableOpacity
+                        key={i}
+                        style={[
+                          styles.card,
+                          isToday && {
+                            borderColor: Colors.successBorder,
+                            backgroundColor: Colors.successBg,
+                          },
+                          status === "ongoing" && {
+                            borderColor: Colors.dangerBorder,
+                            backgroundColor: Colors.dangerBg,
+                          },
+                          status === "done" && { opacity: 0.55 },
+                        ]}
+                        activeOpacity={0.75}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/jadwal/pertemuan-list",
+                            params: {
+                              id_kelas: k.id || k.id_kelas_kuliah,
+                              nama_mk: k.mata_kuliah?.nama,
+                              nama_kelas: k.kelas?.nama,
+                            },
+                          })
+                        }
+                      >
+                        <View
+                          style={[
+                            styles.cardStripe,
+                            {
+                              backgroundColor:
+                                status === "done" ? Colors.border : accent,
+                            },
+                          ]}
+                        />
+                        <View style={styles.cardBody}>
+                          {/* TITLE + SKS */}
+                          <View style={styles.cardTopRow}>
+                            <Text
+                              style={[
+                                styles.cardTitle,
+                                status === "done" && { color: Colors.muted },
+                              ]}
+                              numberOfLines={2}
+                            >
+                              {k.mata_kuliah?.nama}
+                            </Text>
+                            <View style={styles.badgeRow}>
+                              {status === "ongoing" && (
+                                <View style={g.badgeDanger}>
+                                  <View style={styles.ongoingDot} />
+                                  <Text style={g.badgeDangerText}>Live</Text>
+                                </View>
+                              )}
+                              {k.mata_kuliah?.sks && (
+                                <View style={g.badgePrimary}>
+                                  <Text style={g.badgePrimaryText}>
+                                    {k.mata_kuliah.sks} SKS
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                          </View>
+
+                          <Text style={styles.kodeMatkul}>
+                            {k.mata_kuliah?.kode || ""}
+                          </Text>
+                          <View style={g.divider} />
+
+                          {/* INFO */}
+                          <View style={g.infoRow}>
+                            <Ionicons
+                              name="person-outline"
+                              size={13}
+                              color={Colors.hint}
+                            />
+                            <Text style={styles.infoText} numberOfLines={1}>
+                              {dosen?.nama_pengajar
+                                ? `${dosen.nama_pengajar}${gelar}`
+                                : "-"}
+                            </Text>
+                          </View>
+                          <View style={g.infoRow}>
+                            <Ionicons
+                              name="time-outline"
+                              size={13}
+                              color={Colors.hint}
+                            />
+                            <Text style={styles.infoText}>
+                              {`${j?.jam_mulai?.slice(0, 5) ?? "-"} – ${j?.jam_selesai?.slice(0, 5) ?? "-"}`}
+                            </Text>
+                            {j?.jam_mulai && j?.jam_selesai && (
+                              <View style={g.badgePrimary}>
+                                <Text style={g.badgePrimaryText}>
+                                  {toMinutes(j.jam_selesai) -
+                                    toMinutes(j.jam_mulai)}{" "}
+                                  mnt
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          <View style={g.infoRow}>
+                            <Ionicons
+                              name="location-outline"
+                              size={13}
+                              color={Colors.hint}
+                            />
+                            <Text style={styles.infoText}>
+                              {j?.ruangan?.nama || "Ruangan belum ditentukan"}
+                            </Text>
+                          </View>
+
+                          {/* BOTTOM */}
+                          <View style={styles.bottomRow}>
+                            <View style={styles.modeBadge}>
+                              <Ionicons
+                                name={
+                                  k.mode_kuliah === "online"
+                                    ? "wifi-outline"
+                                    : "school-outline"
+                                }
+                                size={11}
+                                color={Colors.primary}
+                              />
+                              <Text style={styles.modeText}>
+                                {k.mode_kuliah === "online"
+                                  ? "Online"
+                                  : "Offline"}
+                              </Text>
+                            </View>
+                            {k.kelas?.nama && (
+                              <View style={styles.kelasBadge}>
+                                <Ionicons
+                                  name="people-outline"
+                                  size={11}
+                                  color={Colors.muted}
+                                />
+                                <Text style={styles.kelasText}>
+                                  {k.kelas.nama}
+                                </Text>
+                              </View>
+                            )}
+                            <View style={styles.tapHint}>
+                              <Ionicons
+                                name="list-outline"
+                                size={11}
+                                color={Colors.primary}
+                              />
+                              <Text style={styles.tapHintText}>
+                                Lihat pertemuan
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              );
+            })
+          ) : (
+            <View style={g.empty}>
+              <Ionicons name="calendar-clear-outline" size={40} color={Colors.border} />
+              <Text style={g.emptyTitle}>Kosong</Text>
+              <Text style={g.emptyHint}>Tidak ada jadwal di tanggal ini</Text>
+            </View>
+          )}
+              </View>
+            </View>
+          )}
+
+          {/* LIST MODE */}
+          {!loading && !error && viewMode === "list" &&
             hariTerurut.map((hari) => {
               const isToday = isCurrentPeriode && hari === today;
               return (
@@ -389,13 +665,7 @@ export default function Jadwal() {
                             >
                               {k.mata_kuliah?.nama}
                             </Text>
-                            <View
-                              style={{
-                                flexDirection: "row",
-                                gap: 6,
-                                alignItems: "center",
-                              }}
-                            >
+                            <View style={styles.badgeRow}>
                               {status === "ongoing" && (
                                 <View style={g.badgeDanger}>
                                   <View style={styles.ongoingDot} />
@@ -515,6 +785,13 @@ export default function Jadwal() {
 }
 
 const styles = StyleSheet.create({
+  iconBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: Colors.card,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+  },
   summaryStrip: {
     flexDirection: "row",
     gap: 8,
@@ -526,6 +803,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingRight: 32,
   },
+  filterScroll: { marginTop: 14 },
+  scrollContent: { paddingBottom: 40 },
+  skeletonGroup: { marginBottom: 20 },
+  skeletonDayDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.skeletonBase,
+  },
+  skeletonCardBody: { flex: 1, padding: 12, gap: 8 },
+  skeletonTopRow: { flexDirection: "row", justifyContent: "space-between" },
+  badgeRow: { flexDirection: "row", gap: 6, alignItems: "center" },
 
   group: { marginBottom: 20 },
   dayHeader: {

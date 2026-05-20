@@ -2,9 +2,11 @@ import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -79,25 +81,20 @@ const JENIS_ICON: Record<string, any> = {
 const UjianSkeleton = () => (
   <View style={styles.skeletonCard}>
     <View style={styles.skeletonStripe} />
-    <View style={{ flex: 1, padding: 12, gap: 8 }}>
-      {/* top row: icon + badge jenis + badge status */}
+    <View style={styles.skelBody}>
       <View style={styles.skeletonTopRow}>
         <View style={styles.skeletonIcon} />
-        <View style={{ flexDirection: "row", gap: 6 }}>
+        <View style={styles.skelBadgeRow}>
           <SkeletonBlock height={20} width={40} />
           <SkeletonBlock height={20} width={80} />
         </View>
       </View>
-      {/* judul + subtitle */}
       <SkeletonBlock height={14} width="70%" />
       <SkeletonBlock height={11} width="50%" />
-      {/* divider */}
-      <View style={{ height: 1, backgroundColor: Colors.border }} />
-      {/* info rows */}
+      <View style={styles.skelDivider} />
       <SkeletonBlock height={11} width="55%" />
       <SkeletonBlock height={11} width="75%" />
       <SkeletonBlock height={11} width="45%" />
-      {/* tombol row */}
       <View style={styles.skeletonBtnRow}>
         <SkeletonBlock height={34} width={80} />
         <SkeletonBlock height={34} width="60%" />
@@ -115,20 +112,6 @@ export default function Ujian() {
   const [error, setError] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    getUjian();
-  }, [periode, jenis]);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      getUjian();
-    }, 400);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [search]);
 
   const getUjian = async () => {
     setLoading(true);
@@ -151,6 +134,12 @@ export default function Ujian() {
     }
   };
 
+  useEffect(() => {
+    getUjian();
+  }, [periode, search]);
+
+  const { refreshing, onRefresh } = useRefresh(getUjian);
+
   const periodeLabel =
     PERIODE_OPTIONS.find((p) => p.value === periode)?.label ?? "";
 
@@ -159,10 +148,11 @@ export default function Ujian() {
 
   return (
     <SafeAreaView style={g.safeArea}>
-      <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false}
+        <ScrollView
+            style={styles.scrollBg}
+            contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
         <View style={g.header}>
@@ -460,14 +450,7 @@ export default function Ujian() {
                       </Text>
                       {u.acakSoal && (
                         <>
-                          <Text
-                            style={{
-                              color: Colors.border,
-                              marginHorizontal: 4,
-                            }}
-                          >
-                            ·
-                          </Text>
+                          <Text style={styles.dotSep}>·</Text>
                           <Ionicons
                             name="shuffle-outline"
                             size={13}
@@ -718,4 +701,10 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
+  skelBody: { flex: 1, padding: 12, gap: 8 },
+  skelBadgeRow: { flexDirection: "row", gap: 6 },
+  skelDivider: { height: 1, backgroundColor: Colors.border },
+  dotSep: { color: Colors.border, marginHorizontal: 4 },
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
 });

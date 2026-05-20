@@ -4,13 +4,17 @@ import { SummaryCard } from "@/components/SummaryCard";
 import { Colors, globalStyles as g } from "@/constants/theme";
 import API from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { useRefresh } from "@/hooks/useRefresh";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -84,21 +88,23 @@ const formatDeadline = (dateStr: string) => {
   });
 };
 
+// ─── Skeleton ────────────────────────────────────────────────────────────────
+
 const TugasSkeleton = () => (
   <View style={styles.card}>
     <View
       style={[styles.cardStripe, { backgroundColor: Colors.skeletonBase }]}
     />
-    <View style={{ flex: 1, padding: 12, gap: 8 }}>
-      <View style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+    <View style={styles.skeletonCardBody}>
+      <View style={styles.skeletonTopRow}>
         <SkeletonBlock width={36} height={36} />
-        <View style={{ flex: 1, gap: 6 }}>
+        <View style={g.flex1}>
           <SkeletonBlock height={14} width="75%" />
           <SkeletonBlock height={11} width="45%" />
         </View>
       </View>
       <View style={g.divider} />
-      <View style={{ flexDirection: "row", gap: 6 }}>
+      <View style={styles.skeletonChipRow}>
         <SkeletonBlock height={22} width={90} />
         <SkeletonBlock height={22} width={70} />
       </View>
@@ -106,6 +112,8 @@ const TugasSkeleton = () => (
     </View>
   </View>
 );
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Tugas() {
   const [tugas, setTugas] = useState<any[]>([]);
@@ -116,6 +124,7 @@ export default function Tugas() {
   const [periode, setPeriode] = useState("20252");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     setTugas([]);
@@ -124,12 +133,14 @@ export default function Tugas() {
     getTugas(1, true);
   }, [periode]);
 
+  const { refreshing, onRefresh } = useRefresh(() => getTugas(1, true));
+
   const getTugas = async (p = 1, reset = false) => {
     p === 1 ? setLoading(true) : setLoadingMore(true);
     if (p === 1) setError(false);
     try {
       const res = await API.get("/v2/lms/tugas", {
-        params: { page: p, per_page: PER_PAGE, periode, search: "" },
+        params: { page: p, per_page: PER_PAGE, periode, search: search || undefined },
       });
       const newData: any[] = res.data.data || [];
       const total: number = res.data.meta?.total ?? newData.length;
@@ -186,342 +197,349 @@ export default function Tugas() {
           : sudahCount,
   }));
 
-  return (
-    <SafeAreaView style={g.safeArea}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false}
+  const renderTugasItem = ({ item: t, index }: { item: any; index: number }) => {
+    const sudah = t.jumlah_pengumpulan > 0;
+    const deadline = getDeadlineInfo(t.waktu_selesai);
+    const isLate = !sudah && deadline?.priority === 0;
+    const isUrgent = !sudah && deadline?.priority === 1;
+    const stripeColor = sudah
+      ? Colors.successText
+      : isLate
+        ? Colors.dangerText
+        : isUrgent
+          ? Colors.warningText
+          : Colors.primary;
+    const cardBorder = sudah
+      ? Colors.successBorder
+      : isLate
+        ? Colors.dangerBorder
+        : isUrgent
+          ? Colors.warningBorder
+          : Colors.border;
+
+    return (
+      <TouchableOpacity
+        key={t.id ?? index}
+        style={[styles.card, { borderColor: cardBorder }]}
+        onPress={() =>
+          router.push({
+            pathname: "/tugas/[id]",
+            params: {
+              id: String(t.id),
+              pertemuan: t.id_pertemuan,
+              judul: t.judul,
+            },
+          })
+        }
+        activeOpacity={0.75}
       >
-        {/* HEADER */}
-        <View style={g.headerSection}>
-          <View style={g.topBar}>
-            <View>
-              <Text style={g.headerLabel}>PORTAL MAHASISWA</Text>
-              <Text style={g.pageTitle}>Daftar Tugas</Text>
+        <View style={[styles.cardStripe, { backgroundColor: stripeColor }]} />
+        <View style={styles.cardBody}>
+          {/* TOP: icon + judul + matkul */}
+          <View style={styles.cardTop}>
+            <View style={g.iconWrap}>
+              <Ionicons
+                name="document-text-outline"
+                size={18}
+                color={Colors.primary}
+              />
             </View>
-            <View style={g.uymBadge}>
-              <Text style={g.uymBadgeText}>UYM</Text>
+            <View style={g.flex1}>
+              <Text style={styles.cardTitle} numberOfLines={2}>
+                {t.judul}
+              </Text>
+              <Text style={styles.cardMatkul} numberOfLines={1}>
+                {t.kelas_kuliah?.mata_kuliah?.nama || "-"}
+              </Text>
             </View>
           </View>
 
-          {/* SUMMARY STRIP */}
-          {!loading && !error && (
-            <View style={styles.summaryStrip}>
-              <SummaryCard
-                icon="checkmark-circle-outline"
-                value={sudahCount}
-                label="Sudah Kumpul"
-                valueColor={Colors.successText}
-              />
-              <SummaryCard
-                icon="time-outline"
-                value={belumCount}
-                label="Belum Kumpul"
-                valueColor={belumCount > 0 ? Colors.warningText : undefined}
-              />
-              <SummaryCard
-                icon="close-circle-outline"
-                value={terlambatCount}
-                label="Terlambat"
-                valueColor={terlambatCount > 0 ? Colors.dangerText : undefined}
-              />
-            </View>
-          )}
-        </View>
+          <View style={g.divider} />
 
-        {/* PERIODE FILTER */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.periodeRow}
-          style={{ marginTop: 14 }}
-        >
-          {PERIODE_OPTIONS.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[
-                g.filterChip,
-                periode === opt.value && g.filterChipActive,
-              ]}
-              activeOpacity={0.75}
-              onPress={() => setPeriode(opt.value)}
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={13}
-                color={periode === opt.value ? "#fff" : Colors.muted}
-              />
-              <Text
+          {/* META CHIPS */}
+          <View style={styles.metaRow}>
+            <MetaChip icon="person-outline" label={t.created_by?.name || "-"} />
+            <MetaChip icon="layers-outline" label={t.jenis_tugas || "-"} />
+          </View>
+
+          {/* DEADLINE ROW */}
+          <View style={styles.deadlineRow}>
+            <Ionicons
+              name="calendar-outline"
+              size={11}
+              color={Colors.muted}
+            />
+            <Text style={styles.deadlineText}>
+              {formatDeadline(t.waktu_selesai)}
+            </Text>
+            {!sudah && deadline && (
+              <View
                 style={[
-                  g.filterChipText,
-                  periode === opt.value && g.filterChipTextActive,
+                  styles.deadlineBadge,
+                  {
+                    backgroundColor: deadline.bg,
+                    borderColor: deadline.border,
+                  },
                 ]}
               >
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Ionicons
+                  name={deadline.icon as any}
+                  size={11}
+                  color={deadline.color}
+                />
+                <Text
+                  style={[styles.deadlineBadgeText, { color: deadline.color }]}
+                >
+                  {deadline.label}
+                </Text>
+              </View>
+            )}
+          </View>
 
-        {/* STATUS TABS */}
-        <View style={{ marginTop: 10, paddingHorizontal: 16 }}>
-          <FilterTab
-            options={filterOptions}
-            active={filter}
-            onSelect={setFilter}
-          />
+          {/* STATUS BADGE */}
+          <View
+            style={[
+              sudah ? g.badgeSuccess : g.badgeWarning,
+              styles.statusBadge,
+            ]}
+          >
+            <Ionicons
+              name={sudah ? "checkmark-circle" : "time-outline"}
+              size={13}
+              color={sudah ? Colors.successText : Colors.warningText}
+            />
+            <Text style={sudah ? g.badgeSuccessText : g.badgeWarningText}>
+              {sudah ? "Sudah dikumpulkan" : "Belum dikumpulkan"}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const ListHeader = () => (
+    <>
+      {/* HEADER */}
+      <View style={g.headerSection}>
+        <View style={g.topBar}>
+          <View>
+            <Text style={g.headerLabel}>PORTAL MAHASISWA</Text>
+            <Text style={g.pageTitle}>Daftar Tugas</Text>
+          </View>
+          <View style={g.uymBadge}>
+            <Text style={g.uymBadgeText}>UYM</Text>
+          </View>
         </View>
 
-        {/* BODY */}
-        <View style={g.body}>
-          {/* ALERT BANNERS */}
-          {!loading && !error && terlambatCount > 0 && (
-            <View style={[g.errorBox, { marginBottom: 4 }]}>
-              <Ionicons
-                name="close-circle-outline"
-                size={14}
-                color={Colors.dangerText}
-              />
-              <Text style={g.errorText}>
-                {terlambatCount} tugas melewati deadline
-              </Text>
-            </View>
-          )}
-          {!loading && !error && urgentCount > 0 && (
-            <View style={[g.warningBox, { marginBottom: 4 }]}>
-              <Ionicons
-                name="warning-outline"
-                size={14}
-                color={Colors.warningText}
-              />
-              <Text style={g.warningBoxText}>
-                {urgentCount} tugas deadline kurang dari 24 jam
-              </Text>
-            </View>
-          )}
+        {!loading && !error && (
+          <View style={styles.summaryStrip}>
+            <SummaryCard
+              icon="checkmark-circle-outline"
+              value={sudahCount}
+              label="Sudah Kumpul"
+              valueColor={Colors.successText}
+            />
+            <SummaryCard
+              icon="time-outline"
+              value={belumCount}
+              label="Belum Kumpul"
+              valueColor={belumCount > 0 ? Colors.warningText : undefined}
+            />
+            <SummaryCard
+              icon="close-circle-outline"
+              value={terlambatCount}
+              label="Terlambat"
+              valueColor={terlambatCount > 0 ? Colors.dangerText : undefined}
+            />
+          </View>
+        )}
+      </View>
 
-          {/* META LABEL */}
-          {!loading && !error && (
-            <Text style={g.sectionLabel}>
-              {filtered.length === 0
-                ? "Tidak ada tugas ditemukan"
-                : `${filtered.length} tugas · diurutkan berdasarkan urgensi`}
+      {/* SEARCH BAR */}
+      <View style={styles.searchWrap}>
+        <Ionicons name="search-outline" size={15} color={Colors.hint} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Cari tugas..."
+          placeholderTextColor={Colors.hint}
+          value={search}
+          onChangeText={setSearch}
+          returnKeyType="search"
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Ionicons name="close-circle" size={15} color={Colors.hint} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* PERIODE FILTER */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.periodeRow}
+        style={styles.periodeScroll}
+      >
+        {PERIODE_OPTIONS.map((opt) => (
+          <TouchableOpacity
+            key={opt.value}
+            style={[
+              g.filterChip,
+              periode === opt.value && g.filterChipActive,
+            ]}
+            activeOpacity={0.75}
+            onPress={() => setPeriode(opt.value)}
+          >
+            <Ionicons
+              name="calendar-outline"
+              size={13}
+              color={periode === opt.value ? "#fff" : Colors.muted}
+            />
+            <Text
+              style={[
+                g.filterChipText,
+                periode === opt.value && g.filterChipTextActive,
+              ]}
+            >
+              {opt.label}
             </Text>
-          )}
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
-          {/* SKELETON */}
-          {loading && [1, 2, 3, 4].map((i) => <TugasSkeleton key={i} />)}
+      {/* FILTER TAB */}
+      <View style={styles.statusTabWrap}>
+        <FilterTab
+          options={filterOptions}
+          active={filter}
+          onSelect={setFilter}
+        />
+      </View>
 
-          {/* ERROR */}
-          {error && (
-            <View style={g.empty}>
-              <Ionicons name="wifi-outline" size={40} color={Colors.border} />
-              <Text style={g.emptyTitle}>Gagal memuat data</Text>
-              <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
-              <TouchableOpacity
-                style={g.retryBtn}
-                onPress={() => getTugas(1, true)}
-              >
-                <Ionicons
-                  name="refresh-outline"
-                  size={15}
-                  color={Colors.primary}
-                />
-                <Text style={g.retryText}>Coba Lagi</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+      {/* ALERT TERLAMBAT */}
+      {!loading && !error && terlambatCount > 0 && (
+        <View style={[g.errorBox, styles.alertBox]}>
+          <Ionicons name="close-circle-outline" size={14} color={Colors.dangerText} />
+          <Text style={g.errorText}>{terlambatCount} tugas melewati deadline</Text>
+        </View>
+      )}
 
-          {/* EMPTY */}
-          {!loading && !error && filtered.length === 0 && (
-            <View style={g.empty}>
-              <Ionicons
-                name="document-outline"
-                size={40}
-                color={Colors.border}
-              />
-              <Text style={g.emptyTitle}>
-                {filter === "belum"
-                  ? "Semua tugas sudah dikumpulkan"
-                  : filter === "sudah"
-                    ? "Belum ada tugas yang dikumpulkan"
-                    : "Tidak ada tugas"}
-              </Text>
-            </View>
-          )}
+      {/* ALERT URGENT */}
+      {!loading && !error && urgentCount > 0 && (
+        <View style={[g.warningBox, styles.alertBox]}>
+          <Ionicons name="warning-outline" size={14} color={Colors.warningText} />
+          <Text style={g.warningBoxText}>{urgentCount} tugas deadline kurang dari 24 jam</Text>
+        </View>
+      )}
 
-          {/* LIST */}
-          {!loading &&
-            !error &&
-            filtered.map((t, i) => {
-              const sudah = t.jumlah_pengumpulan > 0;
-              const deadline = getDeadlineInfo(t.waktu_selesai);
-              const isLate = !sudah && deadline?.priority === 0;
-              const isUrgent = !sudah && deadline?.priority === 1;
-              const stripeColor = sudah
-                ? Colors.successText
-                : isLate
-                  ? Colors.dangerText
-                  : isUrgent
-                    ? Colors.warningText
-                    : Colors.primary;
-              const cardBorder = sudah
-                ? Colors.successBorder
-                : isLate
-                  ? Colors.dangerBorder
-                  : isUrgent
-                    ? Colors.warningBorder
-                    : Colors.border;
+      {/* SECTION LABEL */}
+      {!loading && !error && (
+        <Text style={styles.sectionLabel}>
+          {filtered.length === 0
+            ? "Tidak ada tugas ditemukan"
+            : `${filtered.length} tugas · diurutkan berdasarkan urgensi`}
+        </Text>
+      )}
+    </>
+  );
 
-              return (
-                <TouchableOpacity
-                  key={t.id ?? i}
-                  style={[styles.card, { borderColor: cardBorder }]}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/tugas/[id]",
-                      params: {
-                        id: String(t.id),
-                        pertemuan: t.id_pertemuan,
-                        judul: t.judul,
-                      },
-                    })
-                  }
-                  activeOpacity={0.75}
-                >
-                  <View
-                    style={[
-                      styles.cardStripe,
-                      { backgroundColor: stripeColor },
-                    ]}
-                  />
-                  <View style={styles.cardBody}>
-                    {/* TOP */}
-                    <View style={styles.cardTop}>
-                      <View style={g.iconWrap}>
-                        <Ionicons
-                          name="document-text-outline"
-                          size={18}
-                          color={Colors.primary}
-                        />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.cardTitle} numberOfLines={2}>
-                          {t.judul}
-                        </Text>
-                        <Text style={styles.cardMatkul} numberOfLines={1}>
-                          {t.kelas_kuliah?.mata_kuliah?.nama || "-"}
-                        </Text>
-                      </View>
-                    </View>
+  const ListFooter = () => {
+    if (loadingMore) {
+      return (
+        <View style={styles.loadMoreWrap}>
+          <ActivityIndicator size="small" color={Colors.primary} />
+        </View>
+      );
+    }
+    if (hasMore) {
+      return (
+        <TouchableOpacity
+          style={[g.retryBtn, styles.loadMoreBtn]}
+          onPress={() => getTugas(page + 1)}
+          activeOpacity={0.75}
+        >
+          <Ionicons
+            name="chevron-down-outline"
+            size={14}
+            color={Colors.primary}
+          />
+          <Text style={styles.loadMoreText}>Muat lebih banyak</Text>
+        </TouchableOpacity>
+      );
+    }
+    return null;
+  };
 
-                    <View style={g.divider} />
+  if (loading) {
+    return (
+      <SafeAreaView style={g.safeArea}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <ListHeader />
+          {[1, 2, 3, 4].map((i) => <TugasSkeleton key={i} />)}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
-                    {/* META */}
-                    <View style={styles.metaRow}>
-                      <MetaChip
-                        icon="person-outline"
-                        label={t.created_by?.name || "-"}
-                      />
-                      <MetaChip
-                        icon="layers-outline"
-                        label={t.jenis_tugas || "-"}
-                      />
-                      <MetaChip
-                        icon="git-branch-outline"
-                        label={`Pertemuan ${t.pertemuan?.nomor}`}
-                      />
-                    </View>
-
-                    {/* DEADLINE */}
-                    {t.waktu_selesai && (
-                      <View style={styles.deadlineRow}>
-                        <Ionicons
-                          name="alarm-outline"
-                          size={12}
-                          color={Colors.hint}
-                        />
-                        <Text style={styles.deadlineText} numberOfLines={1}>
-                          Deadline: {formatDeadline(t.waktu_selesai)}
-                        </Text>
-                        {!sudah && deadline && (
-                          <View
-                            style={[
-                              styles.deadlineBadge,
-                              {
-                                backgroundColor: deadline.bg,
-                                borderColor: deadline.border,
-                              },
-                            ]}
-                          >
-                            <Ionicons
-                              name={deadline.icon as any}
-                              size={10}
-                              color={deadline.color}
-                            />
-                            <Text
-                              style={[
-                                styles.deadlineBadgeText,
-                                { color: deadline.color },
-                              ]}
-                            >
-                              {deadline.label}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    )}
-
-                    {/* STATUS */}
-                    <View
-                      style={[
-                        sudah ? g.badgeSuccess : g.badgeWarning,
-                        { alignSelf: "flex-start" },
-                      ]}
-                    >
-                      <Ionicons
-                        name={sudah ? "checkmark-circle" : "time-outline"}
-                        size={13}
-                        color={sudah ? Colors.successText : Colors.warningText}
-                      />
-                      <Text
-                        style={sudah ? g.badgeSuccessText : g.badgeWarningText}
-                      >
-                        {sudah ? "Sudah dikumpulkan" : "Belum dikumpulkan"}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-
-          {/* LOAD MORE */}
-          {hasMore && (
+  if (error) {
+    return (
+      <SafeAreaView style={g.safeArea}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <ListHeader />
+          <View style={g.empty}>
+            <Ionicons name="wifi-outline" size={40} color={Colors.border} />
+            <Text style={g.emptyTitle}>Gagal memuat data</Text>
+            <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
             <TouchableOpacity
               style={g.retryBtn}
-              onPress={() => !loadingMore && getTugas(page + 1)}
-              activeOpacity={0.75}
-              disabled={loadingMore}
+              onPress={() => getTugas(1, true)}
             >
-              {loadingMore ? (
-                <ActivityIndicator size="small" color={Colors.primary} />
-              ) : (
-                <>
-                  <Ionicons
-                    name="chevron-down-outline"
-                    size={14}
-                    color={Colors.primary}
-                  />
-                  <Text style={styles.loadMoreText}>Muat lebih banyak</Text>
-                </>
-              )}
+              <Ionicons name="refresh-outline" size={15} color={Colors.primary} />
+              <Text style={g.retryText}>Coba Lagi</Text>
             </TouchableOpacity>
-          )}
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={g.safeArea}>
+      <FlatList
+        data={filtered}
+        renderItem={renderTugasItem}
+        keyExtractor={(t: any, i: number) => String(t.id ?? i)}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={ListHeader}
+        ListFooterComponent={ListFooter}
+        ListEmptyComponent={
+          <View style={g.empty}>
+            <Ionicons name="document-outline" size={40} color={Colors.border} />
+            <Text style={g.emptyTitle}>
+              {filter === "belum"
+                ? "Semua tugas sudah dikumpulkan"
+                : filter === "sudah"
+                  ? "Belum ada tugas yang dikumpulkan"
+                  : "Tidak ada tugas"}
+            </Text>
+          </View>
+        }
+        onEndReached={hasMore ? () => getTugas(page + 1) : undefined}
+        onEndReachedThreshold={0.5}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      />
     </SafeAreaView>
   );
 }
+
+// ─── Sub Components ───────────────────────────────────────────────────────────
 
 function MetaChip({ icon, label }: { icon: any; label: string }) {
   return (
@@ -534,21 +552,69 @@ function MetaChip({ icon, label }: { icon: any; label: string }) {
   );
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
+  // ── SCROLL ─────────────────────────────
+  scrollContent: {
+    paddingBottom: 40,
+  },
+
+  // ── HEADER SUMMARY ─────────────────────
   summaryStrip: {
     flexDirection: "row",
     gap: 8,
   },
 
-  // FILTERS
+  // ── SEARCH ─────────────────────────────
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.text,
+    padding: 0,
+  },
+
+  // ── FILTERS ────────────────────────────
   periodeRow: {
     flexDirection: "row",
     gap: 8,
     paddingHorizontal: 16,
     paddingRight: 32,
   },
+  periodeScroll: { marginTop: 14 },
+  statusTabWrap: { marginTop: 10, paddingHorizontal: 16 },
 
-  // CARD
+  // ── ALERTS ─────────────────────────────
+  alertBox: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 0,
+  },
+
+  // ── SECTION LABEL ──────────────────────
+  sectionLabel: {
+    fontSize: 11,
+    color: Colors.muted,
+    letterSpacing: 0.2,
+    marginTop: 10,
+    marginBottom: 4,
+    paddingHorizontal: 16,
+  },
+
+  // ── CARD ───────────────────────────────
   card: {
     flexDirection: "row",
     backgroundColor: Colors.card,
@@ -556,6 +622,13 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: Colors.border,
     overflow: "hidden",
+    marginHorizontal: 16,
+    marginBottom: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   cardStripe: { width: 4 },
   cardBody: { flex: 1, padding: 12, gap: 8 },
@@ -568,6 +641,7 @@ const styles = StyleSheet.create({
   },
   cardMatkul: { fontSize: 12, color: Colors.muted, marginTop: 2 },
 
+  // ── META CHIPS ─────────────────────────
   metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   metaChip: {
     flexDirection: "row",
@@ -582,6 +656,7 @@ const styles = StyleSheet.create({
   },
   metaChipText: { fontSize: 11, color: Colors.muted },
 
+  // ── DEADLINE ───────────────────────────
   deadlineRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -594,11 +669,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
     borderWidth: 0.5,
-    borderRadius: 4,
+    borderRadius: 6,
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 3,
   },
   deadlineBadgeText: { fontSize: 10, fontWeight: "700" },
 
+  // ── STATUS ─────────────────────────────
+  statusBadge: { alignSelf: "flex-start" },
+
+  // ── LOAD MORE ──────────────────────────
+  loadMoreWrap: { paddingVertical: 16, alignItems: "center" },
+  loadMoreBtn: { marginHorizontal: 16, marginTop: 4 },
   loadMoreText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
+
+  // ── SKELETON ───────────────────────────
+  skeletonCardBody: { flex: 1, padding: 12, gap: 8 },
+  skeletonTopRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+  skeletonChipRow: { flexDirection: "row", gap: 6 },
 });

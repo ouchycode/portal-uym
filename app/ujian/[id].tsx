@@ -111,12 +111,12 @@ export default function UjianDetail() {
           <SkeletonBlock height={11} width="45%" />
         </View>
         <ScrollView
-          style={{ flex: 1 }}
+          style={g.flex1}
           contentContainerStyle={g.body}
           showsVerticalScrollIndicator={false}
         >
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <View key={i} style={[g.infoRow, { alignItems: "center" }]}>
+            <View key={i} style={[g.infoRow, styles.skelInfoCenter]}>
               <SkeletonBlock height={28} width={28} />
               <SkeletonBlock
                 height={12}
@@ -134,7 +134,7 @@ export default function UjianDetail() {
   if (error) {
     return (
       <SafeAreaView style={g.safeArea}>
-        <View style={[g.emptyWrap, { flex: 1, justifyContent: "center" }]}>
+        <View style={[g.emptyWrap, styles.flexCenter]}>
           <Ionicons name="wifi-outline" size={40} color={Colors.border} />
           <Text style={g.emptyTitle}>Gagal memuat data</Text>
           <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
@@ -151,7 +151,7 @@ export default function UjianDetail() {
   if (!data) {
     return (
       <SafeAreaView style={g.safeArea}>
-        <View style={[g.emptyWrap, { flex: 1, justifyContent: "center" }]}>
+        <View style={[g.emptyWrap, styles.flexCenter]}>
           <Ionicons
             name="document-text-outline"
             size={40}
@@ -186,8 +186,8 @@ export default function UjianDetail() {
   return (
     <SafeAreaView style={g.safeArea}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: Colors.bg }}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={styles.scrollBg}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* HEADER */}
@@ -245,24 +245,14 @@ export default function UjianDetail() {
           {/* SUDAH DIKERJAKAN BANNER */}
           {sudah && (
             <View
-              style={[
-                g.card,
-                {
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: 12,
-                  borderColor: Colors.successBorder,
-                  backgroundColor: Colors.successBg,
-                },
-              ]}
+              style={[g.listRow, styles.sucessBanner]}
             >
               <Ionicons
                 name="checkmark-circle"
                 size={18}
                 color={Colors.successText}
               />
-              <View style={{ flex: 1 }}>
+              <View style={g.flex1}>
                 <Text style={styles.successBannerTitle}>Sudah Dikerjakan</Text>
                 {durasiPengerjaan != null && (
                   <Text style={styles.successBannerSub}>
@@ -621,4 +611,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   kerjakanBtnText: { fontSize: 14, fontWeight: "700", color: "#fff" },
+  skelInfoCenter: { alignItems: "center" },
+  flexCenter: { flex: 1, justifyContent: "center" },
+  sucessBanner: { gap: 10, padding: 12, borderColor: Colors.successBorder, backgroundColor: Colors.successBg },
+  scrollBg: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingBottom: 40 },
 });

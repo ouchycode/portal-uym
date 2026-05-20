@@ -86,7 +86,7 @@ export default function Profile() {
                 }}
                 style={styles.avatar}
               />
-              <View style={{ flex: 1, gap: 3 }}>
+              <View style={styles.identityInfo}>
                 <Text style={styles.userName} numberOfLines={2}>
                   {user?.nama || "-"}
                 </Text>
@@ -115,12 +115,7 @@ export default function Profile() {
 
         {/* LOADING */}
         {loading && (
-          <View
-            style={[
-              g.emptyWrap,
-              { flex: 1, justifyContent: "center", paddingVertical: 60 },
-            ]}
-          >
+          <View style={[g.emptyWrap, styles.loadingContainer]}>
             <ActivityIndicator color={Colors.primary} />
             <Text style={styles.loadingText}>Memuat profil...</Text>
           </View>
@@ -128,12 +123,7 @@ export default function Profile() {
 
         {/* ERROR */}
         {error && (
-          <View
-            style={[
-              g.emptyWrap,
-              { flex: 1, justifyContent: "center", paddingVertical: 60 },
-            ]}
-          >
+          <View style={[g.emptyWrap, styles.loadingContainer]}>
             <Ionicons name="wifi-outline" size={40} color={Colors.border} />
             <Text style={g.emptyTitle}>Gagal memuat data</Text>
             <Text style={g.emptyHint}>Periksa koneksi internet kamu</Text>
@@ -193,7 +183,7 @@ export default function Profile() {
                   color={Colors.primary}
                 />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={g.flex1}>
                 <Text style={styles.prodiName}>
                   {user?.prodi?.nama || "Program Studi"}
                 </Text>
@@ -338,7 +328,7 @@ export default function Profile() {
 
             {/* BANTUAN */}
             <TouchableOpacity
-              style={g.quickLinkCard}
+              style={styles.bantuanCard}
               onPress={() => router.push("/bantuan")}
               activeOpacity={0.75}
             >
@@ -349,10 +339,10 @@ export default function Profile() {
                   color={Colors.primary}
                 />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={g.flex1}>
                 <Text style={g.quickLinkTitle}>Pusat Bantuan</Text>
                 <Text style={g.quickLinkSub}>
-                  FAQ, kontak & jam operasional BAA
+                  FAQ, kontak &amp; jam operasional BAA
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={Colors.hint} />
@@ -424,19 +414,16 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 2,
   },
-
   badgeActiveText: {
     fontSize: 11,
     fontWeight: "600",
     color: Colors.successText,
   },
-
   loadingText: {
     fontSize: 13,
     color: Colors.muted,
     marginTop: 4,
   },
-
   statStrip: {
     flexDirection: "row",
     backgroundColor: Colors.card,
@@ -466,16 +453,8 @@ const styles = StyleSheet.create({
     color: Colors.muted,
     fontWeight: "500",
   },
-  prodiBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 0.5,
-    borderColor: Colors.primaryMid,
-    borderRadius: 10,
-    padding: 12,
-  },
+  identityInfo: { flex: 1, gap: 3 },
+  loadingContainer: { flex: 1, justifyContent: "center", paddingVertical: 60 },
   prodiName: {
     fontSize: 13,
     fontWeight: "700",
@@ -486,5 +465,20 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     opacity: 0.7,
     marginTop: 1,
+  },
+  bantuanCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Colors.card,
+    borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    padding: 12,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
 });

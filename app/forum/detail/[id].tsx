@@ -117,15 +117,13 @@ const BubbleSkeleton = ({ align }: { align: "left" | "right" }) => (
   <View
     style={[
       styles.skeletonBubble,
-      align === "right"
-        ? { alignSelf: "flex-end" }
-        : { alignSelf: "flex-start" },
+      align === "right" ? styles.alignEnd : styles.alignStart,
     ]}
   >
     <SkeletonBlock height={10} width={align === "right" ? 40 : 80} />
     <SkeletonBlock height={12} width={120} />
     <SkeletonBlock height={12} width={align === "right" ? 80 : 100} />
-    <View style={{ alignSelf: "flex-end" }}>
+    <View style={styles.alignEnd}>
       <SkeletonBlock height={9} width={40} />
     </View>
   </View>
@@ -154,7 +152,7 @@ const ReplyPreview = ({
   return (
     <View style={styles.replyPreview}>
       <View style={styles.replyPreviewBar} />
-      <View style={{ flex: 1 }}>
+      <View style={g.flex1}>
         <Text style={styles.replyPreviewName}>{senderName}</Text>
         <Text style={styles.replyPreviewText} numberOfLines={1}>
           {preview}
@@ -185,12 +183,12 @@ const QuoteBubble = ({
     ]}
   >
     <Text
-      style={[styles.quoteNameText, isMe && { color: "rgba(255,255,255,0.9)" }]}
+      style={[styles.quoteNameText, isMe && styles.quoteNameMe]}
     >
       {replyTo.sender_name ?? "User"}
     </Text>
     <Text
-      style={[styles.quoteText, isMe && { color: "rgba(255,255,255,0.7)" }]}
+      style={[styles.quoteText, isMe && styles.quoteTextMe]}
       numberOfLines={2}
     >
       {replyTo.attachment_url
@@ -226,43 +224,22 @@ const MessageBubble = ({
     <View
       style={[
         styles.bubbleWrap,
-        isMe ? { alignItems: "flex-end" } : { alignItems: "flex-start" },
+        isMe ? styles.alignEnd : styles.alignStart,
       ]}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 4,
-          marginBottom: 3,
-          marginLeft: 4,
-          marginRight: 4,
-        }}
-      >
+      <View style={styles.senderRow}>
         <Text
           style={[
             styles.senderName,
-            { marginBottom: 0, marginLeft: 0, marginRight: 0 },
-            isMe && { color: Colors.muted, textAlign: "right" },
-            isLecturer && !isMe && { color: "#e67e22" },
+            isMe && styles.senderNameMe,
+            isLecturer && !isMe && styles.senderNameLecturer,
           ]}
         >
           {isMe ? "Saya" : sender?.name || "User"}
         </Text>
         {isLecturer && !isMe && (
-          <View
-            style={{
-              backgroundColor: "#fef3e2",
-              borderRadius: 4,
-              paddingHorizontal: 5,
-              paddingVertical: 1,
-              borderWidth: 0.5,
-              borderColor: "#f0a500",
-            }}
-          >
-            <Text style={{ fontSize: 9, fontWeight: "700", color: "#e67e22" }}>
-              Dosen
-            </Text>
+          <View style={styles.lecturerBadge}>
+            <Text style={styles.lecturerBadgeText}>Dosen</Text>
           </View>
         )}
       </View>
@@ -275,16 +252,16 @@ const MessageBubble = ({
         )}
 
         {deleted ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View style={styles.deletedRow}>
             <Ionicons
               name="ban-outline"
               size={13}
-              color={isMe ? "rgba(255,255,255,0.5)" : Colors.muted}
+              color={isMe ? styles.deletedIconMe.color : Colors.muted}
             />
             <Text
               style={[
                 styles.deletedText,
-                isMe && { color: "rgba(255,255,255,0.5)" },
+                isMe && styles.deletedTextMe,
               ]}
             >
               Pesan telah dihapus
@@ -314,7 +291,7 @@ const MessageBubble = ({
                 <Text
                   style={[
                     styles.attachmentFileName,
-                    isMe && { color: "rgba(255,255,255,0.9)" },
+                    isMe && styles.attachmentFileNameMe,
                   ]}
                   numberOfLines={1}
                 >
@@ -326,7 +303,7 @@ const MessageBubble = ({
               <Text
                 style={[
                   styles.messageText,
-                  isMe ? { color: "#fff" } : { color: Colors.text },
+                  isMe ? styles.messageTextMe : styles.messageTextOther,
                 ]}
               >
                 {stripHtml(m.message)}
@@ -339,9 +316,7 @@ const MessageBubble = ({
           <Text
             style={[
               styles.timeText,
-              isMe
-                ? { color: "rgba(255,255,255,0.6)" }
-                : { color: Colors.hint },
+              isMe ? styles.timeTextMe : styles.timeTextOther,
             ]}
           >
             {formatTime(m.created_at ?? m.timestamp ?? "")}
@@ -361,7 +336,7 @@ const MessageBubble = ({
         <View
           style={[
             styles.actionRow,
-            isMe ? { alignSelf: "flex-end" } : { alignSelf: "flex-start" },
+            isMe ? styles.alignEnd : styles.alignStart,
           ]}
         >
           {onReply && (
@@ -385,7 +360,7 @@ const MessageBubble = ({
               activeOpacity={0.7}
             >
               <Ionicons name="trash-outline" size={12} color="#e74c3c" />
-              <Text style={[styles.actionBtnText, { color: "#e74c3c" }]}>
+              <Text style={[styles.actionBtnText, styles.actionBtnDeleteText]}>
                 Hapus
               </Text>
             </TouchableOpacity>
@@ -597,12 +572,12 @@ const ThreadModal = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }}>
+      <SafeAreaView style={[g.flex1, { backgroundColor: Colors.bg }]}>
         <View style={styles.threadHeader}>
           <TouchableOpacity onPress={onClose} style={styles.threadCloseBtn}>
             <Ionicons name="close" size={22} color={Colors.text} />
           </TouchableOpacity>
-          <View style={{ flex: 1 }}>
+          <View style={g.flex1}>
             <Text style={styles.threadHeaderTitle}>Balasan</Text>
             <Text style={styles.threadHeaderSub}>
               {thread.chats.length} pesan
@@ -611,13 +586,13 @@ const ThreadModal = ({
         </View>
 
         <KeyboardAvoidingView
-          style={{ flex: 1 }}
+          style={g.flex1}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
         >
           <ScrollView
             ref={scrollRef}
-            style={{ flex: 1 }}
+            style={g.flex1}
             contentContainerStyle={styles.chatContent}
             showsVerticalScrollIndicator={false}
           >
@@ -1331,7 +1306,7 @@ export default function ForumDetail() {
       {/* SOAL DISKUSI */}
       {forum?.deskripsi ? (
         <TouchableOpacity
-          style={[g.infoBox, { margin: 12 }]}
+          style={[g.infoBox, styles.soalBox]}
           onPress={() => setSoalExpanded((v) => !v)}
           activeOpacity={0.8}
         >
@@ -1384,7 +1359,7 @@ export default function ForumDetail() {
               ? `Kamu sudah mengirim ${myPostCount} pesan · syarat terpenuhi ✓`
               : `Wajib kirim minimal `}
             {!sudahCukup && (
-              <Text style={{ fontWeight: "700" }}>
+              <Text style={styles.minPostText}>
                 {forum.minimal_post} pesan
               </Text>
             )}
@@ -1394,21 +1369,21 @@ export default function ForumDetail() {
         </View>
       )}
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0}
-      >
-        {/* CHAT AREA */}
-        <ScrollView
-          ref={scrollRef}
-          style={{ flex: 1, backgroundColor: Colors.bg }}
-          contentContainerStyle={styles.chatContent}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() =>
-            scrollRef.current?.scrollToEnd({ animated: false })
-          }
+        <KeyboardAvoidingView
+          style={g.flex1}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={0}
         >
+          {/* CHAT AREA */}
+          <ScrollView
+            ref={scrollRef}
+            style={[g.flex1, styles.chatBg]}
+            contentContainerStyle={styles.chatContent}
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() =>
+              scrollRef.current?.scrollToEnd({ animated: false })
+            }
+          >
           {loading ? (
             <>
               <BubbleSkeleton align="left" />
@@ -1663,6 +1638,9 @@ export default function ForumDetail() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  alignEnd: { alignItems: "flex-end", alignSelf: "flex-end" },
+  alignStart: { alignItems: "flex-start", alignSelf: "flex-start" },
+
   soalLabelRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1677,16 +1655,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   soalText: { fontSize: 13, color: Colors.text, lineHeight: 20 },
+  soalBox: { margin: 12 },
+
+  minPostText: { fontWeight: "700" },
 
   reminderBoxDone: {
-    backgroundColor: "#eafaf1",
-    borderLeftColor: "#27ae60",
+    backgroundColor: Colors.successBg,
+    borderLeftColor: Colors.successText,
   },
   reminderTextDone: {
-    color: "#1e8449",
+    color: Colors.successText,
   },
 
   chatContent: { padding: 16, paddingBottom: 8, gap: 4 },
+  chatBg: { backgroundColor: Colors.bg },
 
   dateSeparator: {
     flexDirection: "row",
@@ -1703,14 +1685,38 @@ const styles = StyleSheet.create({
   },
 
   bubbleWrap: { marginBottom: 2 },
-  senderName: {
-    fontSize: 11,
-    color: Colors.primary,
-    fontWeight: "600",
+  senderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     marginBottom: 3,
     marginLeft: 4,
     marginRight: 4,
   },
+  senderName: {
+    fontSize: 11,
+    color: Colors.primary,
+    fontWeight: "600",
+    marginBottom: 0,
+    marginLeft: 0,
+    marginRight: 0,
+  },
+  senderNameMe: { color: Colors.muted, textAlign: "right" },
+  senderNameLecturer: { color: Colors.activityTugasText },
+  lecturerBadge: {
+    backgroundColor: Colors.activityTugasBg,
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderWidth: 0.5,
+    borderColor: Colors.accentBorder,
+  },
+  lecturerBadgeText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: Colors.activityTugasText,
+  },
+
   bubble: {
     maxWidth: "78%",
     paddingHorizontal: 12,
@@ -1729,6 +1735,8 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 2,
   },
   messageText: { fontSize: 14, lineHeight: 20 },
+  messageTextMe: { color: "#fff" },
+  messageTextOther: { color: Colors.text },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1736,7 +1744,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   timeText: { fontSize: 10 },
+  timeTextMe: { color: "rgba(255,255,255,0.6)" },
+  timeTextOther: { color: Colors.hint },
+  deletedRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  deletedIconMe: { color: "rgba(255,255,255,0.5)" },
   deletedText: { fontSize: 13, fontStyle: "italic", color: Colors.muted },
+  deletedTextMe: { color: "rgba(255,255,255,0.5)" },
 
   actionRow: {
     flexDirection: "row",
@@ -1755,8 +1768,9 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: Colors.border,
   },
-  actionBtnDelete: { borderColor: "#fcd4d4", backgroundColor: "#fff5f5" },
+  actionBtnDelete: { borderColor: Colors.dangerBorder, backgroundColor: Colors.dangerBg },
   actionBtnText: { fontSize: 11, color: Colors.muted, fontWeight: "500" },
+  actionBtnDeleteText: { color: Colors.dangerText },
 
   threadBtn: {
     flexDirection: "row",
@@ -1855,7 +1869,9 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     marginBottom: 2,
   },
+  quoteNameMe: { color: "rgba(255,255,255,0.9)" },
   quoteText: { fontSize: 12, color: Colors.muted },
+  quoteTextMe: { color: "rgba(255,255,255,0.7)" },
 
   replyPreview: {
     flexDirection: "row",
@@ -1923,6 +1939,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   attachmentFileName: { flex: 1, fontSize: 13, color: Colors.text },
+  attachmentFileNameMe: { color: "rgba(255,255,255,0.9)" },
 
   skeletonBubble: {
     backgroundColor: Colors.card,
